@@ -1,0 +1,66 @@
+HATTAN OPS SUITE V16.1 — MODERN SUPABASE LIVE FOUNDATION
+
+START HERE
+1. Read LIVE-SETUP-GUIDE.md before adding real credentials.
+2. Do not upload index.html alone. Deploy the complete folder.
+3. For live Functions, use a Git-connected Netlify project or Netlify CLI.
+4. Use HATTAN_MODE=local for browser-only testing.
+5. Use HATTAN_MODE=shared after Supabase is configured.
+6. Keep CLOVER_ENVIRONMENT=sandbox until every payment test passes.
+
+LOCAL DEMO USERS
+- Jordan Lee: PIN 1234
+- Sam Whitfield (Manager): PIN 2468
+
+These demo PINs are ignored in shared/live mode. Shared staff accounts are
+created on the secure server and PINs are stored only as salted hashes.
+
+V16.1 TESTS
+0. Login layout
+   - Employee names and Manager badges stay inside their cards.
+   - Change PIN is a separate full-width row and does not cover the name.
+   - Tab and Enter operate Sign In and Change PIN as separate controls.
+
+1. Secure setup
+   - Settings > Live System Setup shows Netlify, Supabase and Clover status.
+   - The private Clover token must only be entered in Netlify Environment
+     variables. There is intentionally no private-token input in the POS.
+
+2. Shared counters
+   - Open two browsers and sign in.
+   - Create/edit a customer or ticket in one.
+   - Confirm the other updates within five seconds without a refresh.
+   - Optional ES256 Realtime variables reduce that to an instant push update.
+   - Disconnect one browser, make a change, reconnect, and confirm the
+     optimistic conflict merge preserves both counters' records.
+
+3. Secure staff accounts
+   - Complete the one-time manager bootstrap.
+   - Add a staff member and change a PIN.
+   - Confirm five incorrect attempts cause a 15-minute rate limit.
+   - Punch in from a separate device without taking over the counter user.
+
+4. Clover sandbox card-on-file
+   - Add a card from a customer profile using Clover-hosted fields.
+   - Confirm only brand/last four appear after save.
+   - Replace and remove a saved card; confirm the old Clover source is revoked.
+   - Run one sandbox batch charge and one manager-authorized refund.
+   - Confirm the Clover charge/refund IDs stay attached to ticket history.
+
+5. Existing workflows
+   - Separate service tickets and due dates, RUSH, AI Voice Intake.
+   - Post-intake tag assignment, rack/conveyor scan, recalls.
+   - Delivery batch scan, timestamp, print and proof photo.
+   - Pickup, pickup recall, full ticket editing, store credit, A/R search.
+   - Star TSP100IV 80mm printing and NADAMOO Code 128 scan + Enter.
+
+DO NOT USE LIVE CARDS YET IF
+- Clover has not enabled and confirmed multi-pay/card-on-file for the live MID.
+- The Netlify secure Functions connection test does not pass.
+- Supabase backup/restore has not been tested.
+- Two-counter, refund, printer, barcode, and delivery tests have not passed.
+- Staff are still using demo/shared PINs.
+
+V16.1 is the correct live architecture foundation. Full production rollout still
+requires Clover confirmation/certification, monitoring, backups, staff training,
+and a controlled pilot. See LIVE-SETUP-GUIDE.md.
