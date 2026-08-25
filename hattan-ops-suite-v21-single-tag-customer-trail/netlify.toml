@@ -1,0 +1,146 @@
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Permissions-Policy = "camera=(self), microphone=(self), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.clover.com https://checkout.sandbox.dev.clover.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://checkout.clover.com https://checkout.sandbox.dev.clover.com; frame-src https://checkout.clover.com https://checkout.sandbox.dev.clover.com; font-src 'self' data:; base-uri 'self'; form-action 'self'"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Content-Type = "text/html; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v8-operations-upgrade.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v8-operations-upgrade.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v13-accessibility.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v13-accessibility.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v14-workflow.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v14-workflow.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v15-finance-workflow.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v15-finance-workflow.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v16-live-foundation.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v16-live-foundation.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v17-store-pilot.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v17-store-pilot.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v18-stability.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v18-stability.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v19-customer-controls.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v19-customer-controls.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v20-bilingual-session.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v20-bilingual-session.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v21-single-tag-customer-trail.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v21-single-tag-customer-trail.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
