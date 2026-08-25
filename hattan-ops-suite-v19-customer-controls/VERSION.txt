@@ -1,0 +1,20 @@
+Hattan Ops Suite V19 Customer Controls
+Build date: 2026-08-24
+
+Primary additions:
+- Tag Assign contains only Dry Cleaning, Laundered Shirts and Alterations.
+- White replaces Black as a physical tag color.
+- New Ticket shows customer balance due and store credit at the upper right.
+- Pay Now explicitly asks whether to apply available store credit.
+- Account reports can be viewed and opened as text or email drafts.
+- Wash & Fold production choices show bold Chinese beneath English.
+- Delivery-default customers require confirmation for a one-ticket pickup override.
+- Apartment/unit and RUSH markers print in very large bold type at ticket top.
+
+Inherited V18 stability fixes:
+- Secure reload/session restoration without prototype employee flash.
+- Same-day due dates automatically become RUSH.
+- Reliable recorded-audio Windows voice intake and microphone test.
+- Full-width Tomorrow control and removal of false navigation carets.
+
+Automated verification: 39 tests passing.

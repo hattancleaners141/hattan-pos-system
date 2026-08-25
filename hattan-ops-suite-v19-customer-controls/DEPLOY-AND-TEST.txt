@@ -1,0 +1,137 @@
+HATTAN OPS SUITE V19 CUSTOMER CONTROLS
+
+START HERE
+1. Read LIVE-SETUP-GUIDE.md before adding real credentials.
+2. Do not upload index.html alone. Deploy the complete folder.
+3. For live Functions, use a Git-connected Netlify project or Netlify CLI.
+4. Use HATTAN_MODE=local for browser-only testing.
+5. Use HATTAN_MODE=shared after Supabase is configured.
+6. Keep CLOVER_ENVIRONMENT=sandbox until every payment test passes.
+
+LOCAL DEMO USERS
+- Jordan Lee: PIN 1234
+- Sam Whitfield (Manager): PIN 2468
+
+These demo PINs are ignored in shared/live mode. Shared staff accounts are
+created on the secure server and PINs are stored only as salted hashes.
+
+V19 ACCEPTANCE TESTS
+0. Customer finance at New Ticket
+   - Select a customer with an unpaid balance and store credit.
+   - Confirm both amounts appear at the upper right.
+   - Open Generate Report, Text Report and Email Report.
+   - Choose Pay Now and verify store credit remains off until staff chooses Yes.
+   - Confirm the 3% card fee is calculated only on the amount left after credit.
+
+1. Delivery-default safeguard
+   - Set a customer profile to Delivery and start a new ticket.
+   - Confirm Delivery is selected automatically.
+   - Choose Pickup and confirm the warning appears.
+   - Keep Delivery once, then test the one-ticket Pickup override.
+   - Confirm the saved customer profile still says Delivery afterward.
+
+2. Tag Assign and bilingual production
+   - Confirm Dry Cleaning, Laundered Shirts and Alterations appear in Tag Assign.
+   - Confirm Wash & Fold never appears and cannot be added by barcode scan.
+   - Confirm White is available and Black is absent.
+   - In Wash & Fold, select Low dry, No softener, Delicate cycle and
+     Separate darks & whites; confirm bold Chinese appears under each English label.
+
+3. Thermal ticket priorities
+   - Print a Delivery customer with apartment 2C and confirm `2C *` is very large at top.
+   - Print a same-day order and confirm RUSH is very large at top.
+   - Confirm the receipt cuts immediately after the barcode with no long blank feed.
+
+V18 STABILITY REGRESSION TESTS
+0. Login layout
+   - Employee names and Manager badges stay inside their cards.
+   - Change PIN is a separate full-width row and does not cover the name.
+   - Tab and Enter operate Sign In and Change PIN as separate controls.
+
+1. Secure setup
+   - Settings > Live System Setup shows Netlify, Supabase and Clover status.
+   - The private Clover token must only be entered in Netlify Environment
+     variables. There is intentionally no private-token input in the POS.
+
+2. Shared counters
+   - Open two browsers and sign in.
+   - Create/edit a customer or ticket in one.
+   - Confirm the other updates within five seconds without a refresh.
+   - Optional ES256 Realtime variables reduce that to an instant push update.
+   - Disconnect one browser, make a change, reconnect, and confirm the
+     optimistic conflict merge preserves both counters' records.
+
+3. Secure staff accounts
+   - Complete the one-time manager bootstrap.
+   - Add a staff member and change a PIN.
+   - Confirm five incorrect attempts cause a 15-minute rate limit.
+   - Punch in from a separate device without taking over the counter user.
+
+4. Clover sandbox card-on-file
+   - Add a card from a customer profile using Clover-hosted fields.
+   - Confirm only brand/last four appear after save.
+   - Replace and remove a saved card; confirm the old Clover source is revoked.
+   - Run one sandbox batch charge and one manager-authorized refund.
+   - Confirm the Clover charge/refund IDs stay attached to ticket history.
+
+5. Existing workflows
+   - Separate service tickets and due dates, RUSH, AI Voice Intake.
+   - Post-intake tag assignment, rack/conveyor scan, recalls.
+   - Delivery batch scan, timestamp, print and proof photo.
+   - Pickup, pickup recall, full ticket editing, store credit, A/R search.
+   - Star TSP100IV 80mm printing and NADAMOO Code 128 scan + Enter.
+
+6. Star receipt length
+   - In Chrome choose Star TSP100, 72mm x Receipt, Portrait, scale 100%,
+     margins None, headers/footers Off, and background graphics On.
+   - Print one hardware test ticket first.
+   - Confirm it cuts directly after the barcode/test footer without feeding a
+     long unused section of the preprinted roll.
+
+7. V18 ticket and production checks
+   - Wash & Fold prints bag color and detergent/dry preferences in larger bold text.
+   - RUSH prints in a bold box at the very top and defaults to 4:00 PM.
+   - Apartment/unit prints in large type at the top of the ticket.
+   - Change the default RUSH time in Settings and override it on one ticket.
+   - Confirm special-material upcharges are added once per line, not per piece.
+   - Dry Cleaning, Laundered Shirts and Alterations appear in Tag Assign;
+     Wash & Fold does not. White is available and Black is removed.
+
+8. Windows voice and startup checks
+   - Add OPENAI_API_KEY as a secret Netlify environment variable and redeploy.
+   - Settings > Windows Voice Intake > Test Windows Microphone shows a moving meter.
+   - Choose the correct Windows input; this choice stays on that counter.
+   - Use the main microphone button to record, stop and transcribe, then review
+     the transcript before Interpret.
+   - Dictate multiple services and confirm each becomes a separate ticket draft.
+   - Reload while signed in; the secure session restores without sample staff or
+     the wrong page flashing. A normal reload does not require another PIN.
+   - Set one due date to today and confirm RUSH appears onscreen and at the top
+     of the printed ticket automatically.
+   - Confirm the full Tomorrow button is visible on the Windows counter.
+   - Tab through Back to Counter and buttons; no typing caret should appear on them.
+
+9. Legacy import pilot
+   - Manager downloads a backup before importing.
+   - Import a small customer CSV first and verify address, apartment, balance,
+     store credit, customer number, notes and delivery/pickup default.
+   - Remove one incorrect preview row and confirm it is not imported.
+   - Import a small ticket-history file and verify partial balances and dates.
+   - Screenshot/photo extraction is optional and requires OPENAI_API_KEY in Netlify.
+     Review every extracted row; never upload payment-card images or passwords.
+
+10. Secure new-customer card flow
+   - In shared mode, New Customer does not accept raw card data.
+   - Create the customer, open the customer profile, and use Add Card Securely.
+   - Confirm Clover-hosted fields appear and the POS retains only brand/last four.
+
+DO NOT USE LIVE CARDS YET IF
+- Clover has not enabled and confirmed multi-pay/card-on-file for the live MID.
+- The Netlify secure Functions connection test does not pass.
+- Supabase backup/restore has not been tested.
+- Two-counter, refund, printer, barcode, and delivery tests have not passed.
+- Staff are still using demo/shared PINs.
+
+V19 keeps the V18 stability layer, V17 store-pilot architecture and receipt-length fix. Full production rollout still
+requires Clover confirmation/certification, monitoring, backups, staff training,
+and a controlled pilot. See LIVE-SETUP-GUIDE.md.
