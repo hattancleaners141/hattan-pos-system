@@ -1,4 +1,0 @@
-Hattan Ops Suite V23.1
-Build: 23.1.0
-Updated: 2026-08-27
-Focus: AI typed/voice intake + high-visibility delivery tickets + separate print jobs + silent-print-ready workstation flow
