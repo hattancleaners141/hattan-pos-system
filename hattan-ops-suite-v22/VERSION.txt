@@ -1,9 +1,0 @@
-Hattan Ops Suite V22 Customer Finance + Full Spanish
-Build date: 2026-08-25
-
-V22 additions:
-- Pay Now store-credit choice now supports no credit, all available credit, or a custom amount.
-- Customer A/R is prominent during ticket creation with Pay Balance, View A/R, Text Report and Email Report actions.
-- ES applies a full-screen Spanish presentation layer to dynamic Staff POS content and modals, not only the sidebar.
-- Recently Viewed Customers remains available and records actual opened/searched customer profiles, capped to the latest 20.
-- All V21 single-tag, Wash & Fold exclusions, customer trail, V20 bilingual production, and earlier safeguards are retained.
