@@ -1,0 +1,2 @@
+Hattan Ops Suite V23.5 Stable
+Single boot/session controller; V23 AI intake and printing preserved.
