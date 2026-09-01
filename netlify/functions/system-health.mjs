@@ -8,6 +8,8 @@ export const handler = async (event) => {
       database:{ configured:supabaseConfigured(), connected:false },
       realtime:{ configured:supabaseRealtimeConfigured(), mode:supabaseRealtimeMode() },
       clover:{ configured:cloverConfigured(), connected:false, environment:env('CLOVER_ENVIRONMENT', 'sandbox') },
+      voice:{ configured:!!env('OPENAI_API_KEY'), model:env('OPENAI_TRANSCRIBE_MODEL', 'gpt-transcribe') },
+      ticketPhotoImport:{ configured:!!env('OPENAI_API_KEY'), model:env('OPENAI_IMPORT_MODEL', 'gpt-4.1-mini') },
     };
     if (checks.database.configured) {
       try { await selectRows('staff_accounts', 'limit=1', 'id'); checks.database.connected = true; }

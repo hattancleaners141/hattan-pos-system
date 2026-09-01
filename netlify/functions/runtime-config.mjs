@@ -5,7 +5,7 @@ export const handler = async (event) => {
   const environment = env('CLOVER_ENVIRONMENT', 'sandbox').toLowerCase() === 'production' ? 'production' : 'sandbox';
   return json(200, {
     ok: true,
-    version: '16.1',
+    version: '18.0',
     mode: ['local', 'shared', 'live'].includes(env('HATTAN_MODE').toLowerCase()) ? env('HATTAN_MODE').toLowerCase() : 'local',
     storeId: env('HATTAN_STORE_ID', 'main'),
     sync: {
@@ -22,6 +22,14 @@ export const handler = async (event) => {
       environment,
       sdkUrl: environment === 'production' ? 'https://checkout.clover.com/sdk.js' : 'https://checkout.sandbox.dev.clover.com/sdk.js',
       privateTokenOnServer: !!env('CLOVER_PRIVATE_TOKEN'),
+    },
+    voice: {
+      configured: !!env('OPENAI_API_KEY'),
+      model: env('OPENAI_TRANSCRIBE_MODEL', 'gpt-transcribe'),
+    },
+    ticketPhotoImport: {
+      configured: !!env('OPENAI_API_KEY'),
+      model: env('OPENAI_IMPORT_MODEL', 'gpt-4.1-mini'),
     },
   });
 };

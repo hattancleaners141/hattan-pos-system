@@ -48,3 +48,43 @@
 /v16-live-foundation.css
   Content-Type: text/css; charset=UTF-8
   Cache-Control: no-cache
+
+/v17-store-pilot.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v17-store-pilot.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v18-stability.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v18-stability.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v19-customer-controls.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v19-customer-controls.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v20-bilingual-session.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v20-bilingual-session.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v21-single-tag-customer-trail.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v21-single-tag-customer-trail.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache

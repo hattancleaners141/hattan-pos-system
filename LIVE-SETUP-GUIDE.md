@@ -1,6 +1,6 @@
-# Hattan Ops Suite V16.1 — Live Setup Guide
+# Hattan Ops Suite V21 Single Tag + Customer Trail — Live Setup Guide
 
-V16.1 keeps the existing POS workflow and updates the live foundation for Supabase's current API-key system:
+V21 keeps the V20 bilingual/session fixes, V19 customer-control layer, V18 stability layer, V17 secure store-pilot architecture and Star TSP100IV receipt-length fix. It adds one physical tag per eligible ticket, permanently excludes Wash & Fold from tag assignment, and adds a recently viewed customer trail with direct profile-to-drop-off navigation. It uses Supabase's current API-key system:
 
 - **Netlify** serves the POS and runs protected server functions.
 - **Supabase** stores one shared business state for every counter and app.
@@ -115,7 +115,15 @@ Then:
 5. Store the same `kid` value as `SUPABASE_JWT_KID`.
 6. Redeploy and confirm **Instant Realtime** appears in the POS connection test.
 
-Never send the private JWK in chat, email, screenshots, client code, or browser storage. V16.1 retains temporary support for `SUPABASE_JWT_SECRET` only for existing legacy projects; do not choose it for a new project.
+Never send the private JWK in chat, email, screenshots, client code, or browser storage. V21 retains temporary support for `SUPABASE_JWT_SECRET` only for existing legacy projects; do not choose it for a new project.
+
+## 7A. Optional Windows transcription and legacy screenshot extraction
+
+Microphone testing, typed intake, CSV imports and JSON imports do not require an extra service. V21 keeps recorded-audio transcription as the primary Windows voice path because Chrome's live speech feature is inconsistent on Windows counters. Add `OPENAI_API_KEY` as a Netlify secret available to Functions, then redeploy. This also lets a signed-in manager turn a legacy POS screenshot into a review draft. You may optionally set `OPENAI_TRANSCRIBE_MODEL` and `OPENAI_IMPORT_MODEL`; the defaults are listed in `.env.example`.
+
+The recording fallback is limited to 45 seconds and returns editable transcript text; staff still choose **Interpret** before creating drafts. A legacy image is compressed in the browser, sent through the protected manager-only Netlify Function, and returned as structured review rows. It is not applied automatically. Never upload payment cards, PINs, passwords or authentication secrets, and verify every extracted value before selecting **Apply Import**.
+
+For migration, prefer CSV or JSON exports over screenshots. Start with a small batch, remove any incorrect preview rows, apply it, and verify the resulting customer profiles and ticket history before continuing. Negative legacy balances are treated as store credit; positive balances remain accounts receivable. The importer advances the live customer and ticket counters to prevent new-number collisions.
 
 ## 8. Test Clover sandbox
 
@@ -154,8 +162,25 @@ Only then set `CLOVER_ENVIRONMENT=production`, set `HATTAN_MODE=live`, enter the
 - Clover private token: Netlify secret, server only.
 - Card number, expiration and CVV: Clover Hosted iFrame only.
 - Staff PIN: salted PBKDF2 hash; never stored readably.
-- Staff session: signed HttpOnly SameSite cookie with an eight-hour lifetime.
+- Staff session: signed HttpOnly SameSite cookie renewed on authenticated reload, with a twelve-hour shift lifetime.
 - Failed PIN attempts: limited after five failures per employee/IP in fifteen minutes.
 - Shared writes: authenticated server endpoint with version conflict detection and audit history.
 
-V16.1 is a secure live foundation, not a substitute for Clover production approval, backup drills, monitoring, staff training and a controlled store pilot.
+V21 is a secure live foundation, not a substitute for Clover production approval, backup drills, monitoring, staff training and a controlled store pilot.
+
+## V23.1 printing behavior (important)
+
+V23.1 removes the extra POS print-preview confirmation. A staff member clicks **Print once** in Hattan POS.
+
+For multiple tickets, the POS places exactly one receipt in each browser print job and waits **2.5 seconds** after each completed print job before sending the next ticket. This prevents two or more service tickets from being rendered as one long thermal receipt.
+
+Delivery receipts now show, in this order, a very large centered apartment/unit number (delivery tickets only), a large centered ticket number, and a clearly labeled customer account number.
+
+### Getting rid of the browser/system print popup
+
+A normal web page is not permitted to silently print to a local printer. To make the single Hattan POS click print immediately with no Chrome/Windows dialog, configure each dedicated counter workstation for silent printing. The simplest Windows deployment is to launch the dedicated POS Chrome/Edge shortcut in kiosk-printing mode with the Star TSP100 set as that browser profile's default printer. Another production option is Star WebPRNT/CloudPRNT or a local print-bridge service.
+
+V23.1 is already coded for this flow: once the workstation allows silent printing, no additional POS code or second POS print click is required. If kiosk/bridge printing is not configured, V23.1 falls back to the browser's required print dialog.
+
+## V23.5 Stable startup change
+V23.5 removes the stacked V17/V18/V20/V23 boot-controller behavior from the active startup path. One bounded session boot now controls startup. The POS dashboard renders before realtime initialization, and a visible Retry screen appears instead of a blank page if startup cannot complete.

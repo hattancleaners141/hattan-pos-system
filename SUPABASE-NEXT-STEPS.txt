@@ -24,7 +24,7 @@ DO THIS NEXT
    HATTAN_STORE_ID=main
    HATTAN_SESSION_SECRET=(a unique random 32+ character value)
    HATTAN_BOOTSTRAP_CODE=(a different unique 12+ character value)
-9. Deploy the COMPLETE V16.1 project through a private Git repository or
+9. Deploy the COMPLETE V21 Single Tag + Customer Trail project through a private Git repository or
    Netlify CLI. Do not deploy index.html by itself.
 10. Open the deployed site, create the first manager, and test on two browsers.
 

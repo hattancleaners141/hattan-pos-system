@@ -1,5 +1,5 @@
 /* ============================================================================
-   HATTAN OPS V16.1 — modern Supabase keys + secure live foundation
+   HATTAN OPS V16.2 — Star receipt-length fix + secure live foundation
 
    The browser receives only public processor configuration. Clover's private
    token, Supabase's service key, PIN hashes and payment vault identifiers stay
@@ -12,7 +12,7 @@ const V16_SHARED_KEYS = [
   'automatedTexts','rackSettings','printSettings','customerMemos',
   'interfaceSettings','garmentCatalog','materials','nextConveyorNumber',
   'deliveryBatches','nextDeliveryBatch','nextCustomerNumber','hardwareProfile',
-  'v14InstructionOrder',
+  'v14InstructionOrder','legacyRevenueHistory','migrationAudit',
 ];
 
 const v16Live = {
@@ -397,7 +397,7 @@ posSignOut = async function v16SignOut() {
 };
 
 function v16SetupRequiredScreen(message) {
-  document.getElementById('pos-root').innerHTML = `<div class="pos-login-wrap"><div class="pos-login-card v16-setup-gate"><div class="logo-mark" style="margin:0 auto 10px"></div><h1>Hattan Cleaners</h1><span class="v16-eyebrow">V16.1 LIVE SETUP</span><h2>Finish the secure server setup</h2><p>${esc(message || 'The shared database is not ready yet.')}</p><ol><li>Open <strong>LIVE-SETUP-GUIDE.md</strong> from the download.</li><li>Run <strong>supabase/schema.sql</strong> in Supabase.</li><li>Add the modern Supabase variables in Netlify and redeploy.</li></ol><button class="btn btn-primary btn-block" onclick="location.reload()">Check Again</button></div></div>`;
+  document.getElementById('pos-root').innerHTML = `<div class="pos-login-wrap"><div class="pos-login-card v16-setup-gate"><div class="logo-mark" style="margin:0 auto 10px"></div><h1>Hattan Cleaners</h1><span class="v16-eyebrow">V16.2 LIVE SETUP</span><h2>Finish the secure server setup</h2><p>${esc(message || 'The shared database is not ready yet.')}</p><ol><li>Open <strong>LIVE-SETUP-GUIDE.md</strong> from the download.</li><li>Run <strong>supabase/schema.sql</strong> in Supabase.</li><li>Add the modern Supabase variables in Netlify and redeploy.</li></ol><button class="btn btn-primary btn-block" onclick="location.reload()">Check Again</button></div></div>`;
 }
 
 function v16BootstrapScreen() {
@@ -699,7 +699,7 @@ function v16LiveSetupCard() {
   const shared = v16IsShared(), clover = config.clover || {}, sync = config.sync || {};
   const syncLabel = sync.realtimeReady ? 'Instant Realtime' : (sync.configured ? 'Secure 5-sec sync' : 'Needs variables');
   return `<div class="pos-card v16-live-card">
-    <div class="v16-live-head"><div><span class="v16-eyebrow">V16.1 MODERN KEYS</span><h3>${icon('wifi',18)} Live System Setup</h3><div class="v2-note">Netlify hosts the app and protected server functions. Supabase shares data across every counter and app. Clover handles card data and payments.</div></div><span class="v16-mode ${config.mode}">${esc(String(config.mode || 'local').toUpperCase())}</span></div>
+    <div class="v16-live-head"><div><span class="v16-eyebrow">V16.2 STAR PRINT FIX</span><h3>${icon('wifi',18)} Live System Setup</h3><div class="v2-note">Netlify hosts the app and protected server functions. Supabase shares data across every counter and app. Clover handles card data and payments.</div></div><span class="v16-mode ${config.mode}">${esc(String(config.mode || 'local').toUpperCase())}</span></div>
     <div class="v16-architecture"><div><small>APP + SERVER</small><strong>Netlify</strong><span>Static POS + protected Functions</span></div><b>→</b><div><small>SHARED DATA</small><strong>Supabase</strong><span>All counters + driver app</span></div><b>→</b><div><small>PAYMENTS</small><strong>Clover</strong><span>Hosted iframe + private API</span></div></div>
     <div class="v16-status-grid"><div><strong>Shared database</strong>${v16StatusPill(shared && sync.configured,'Configured','Needs variables')}</div><div><strong>Counter synchronization</strong>${v16StatusPill(shared && sync.configured,syncLabel,'Needs variables')}</div><div><strong>Clover public token</strong>${v16StatusPill(!!clover.publicToken,'Loaded safely','Not set')}</div><div><strong>Clover private token</strong>${v16StatusPill(!!clover.privateTokenOnServer,'Server only','Not set')}</div><div><strong>Clover environment</strong><span class="v16-status ${clover.environment === 'production' ? 'warn' : 'ok'}">${esc(clover.environment || 'sandbox')}</span></div><div><strong>Current sync</strong><span class="v16-status ${['live','polling'].includes(v16Live.syncStatus) ? 'ok' : 'missing'}">${esc(v16Live.syncStatus)}</span></div></div>
     <div class="v16-secret-rule"><strong>${icon('lock',15)} Where you put private keys</strong><p>Open Netlify → Project configuration → Environment variables. Mark <code>SUPABASE_SECRET_KEY</code>, <code>HATTAN_SESSION_SECRET</code> and <code>CLOVER_PRIVATE_TOKEN</code> as secret values. They intentionally have no input boxes in this POS and are never downloaded to a counter.</p></div>
@@ -732,6 +732,6 @@ function v16ShowSetupSteps() {
 /* Version label and startup. */
 const v16BasePosShellHTML = posShellHTML;
 posShellHTML = function v16PosShellHTML() {
-  return v16BasePosShellHTML().replace(/Staff POS(?: · V\d+(?: [A-Za-z]+)?)?/g, 'Staff POS · V16.1 Live');
+  return v16BasePosShellHTML().replace(/Staff POS(?: · V\d+(?: [A-Za-z]+)?)?/g, 'Staff POS · V16.2 Live');
 };
 document.addEventListener('DOMContentLoaded', () => setTimeout(v16Boot, 0));

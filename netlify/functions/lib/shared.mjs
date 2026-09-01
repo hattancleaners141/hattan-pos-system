@@ -1,7 +1,9 @@
 import crypto from 'node:crypto';
 
 const SESSION_COOKIE = 'hattan_session';
-const SESSION_SECONDS = 8 * 60 * 60;
+// A full counter shift. The session endpoint renews this securely on reload,
+// so refreshing the browser does not unexpectedly return staff to sign-in.
+const SESSION_SECONDS = 12 * 60 * 60;
 
 export function env(name, fallback = '') {
   return String(process.env[name] ?? fallback).trim();

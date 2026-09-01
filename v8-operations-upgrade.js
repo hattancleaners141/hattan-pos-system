@@ -21,6 +21,22 @@ const V8_ALTERATION_TAG_COLORS = {
   6: { name: 'Purple', hex: '#8059a5' }
 };
 
+let v8PrintCleanupTimer = null;
+function v8FinishReceiptPrint() {
+  document.documentElement.classList.remove('v8-receipt-printing');
+  if (v8PrintCleanupTimer) clearTimeout(v8PrintCleanupTimer);
+  v8PrintCleanupTimer = null;
+}
+function v8PrintReceiptArea(delay = 120) {
+  const area = document.getElementById('print-area');
+  if (!area || !area.children.length) return;
+  document.documentElement.classList.add('v8-receipt-printing');
+  window.addEventListener('afterprint', v8FinishReceiptPrint, { once:true });
+  if (v8PrintCleanupTimer) clearTimeout(v8PrintCleanupTimer);
+  v8PrintCleanupTimer = setTimeout(v8FinishReceiptPrint, 60000);
+  setTimeout(() => requestAnimationFrame(() => window.print()), delay);
+}
+
 function v8NowISO() { return new Date().toISOString(); }
 function v8TodayISO() {
   const d = new Date();
@@ -881,7 +897,7 @@ function v8PrintDeliveryBatch(){
   const batch={id:`DEL-${String(state.nextDeliveryBatch++).padStart(4,'0')}`,driverId,createdAt:v8NowISO(),orderIds:orders.map(o=>o.id),status:'on_driver_app'};
   orders.forEach(o=>{o.assignedDriverId=driverId;o.driverRouteReady=true;o.deliveryManifestedAt=batch.createdAt;o.deliveryBatchId=batch.id;o.deliveryScanStatus='manifested';v8AddActivity(o,'delivery_manifest',`Added to ${batch.id} and sent to driver app`,{driverId});});
   state.deliveryBatches.unshift(batch);state.deliveryUi.scanned=[];recordSync(`Delivery manifest printed · ${batch.id} · ${orders.length} tickets · ${driverById(driverId)?.name}`);saveState();
-  document.getElementById('print-area').innerHTML=v8DeliveryManifestHTML(batch,orders);toast(`${batch.id} printed and sent to ${driverById(driverId)?.name}'s delivery app`,true,'printer');renderPosContent();setTimeout(()=>window.print(),80);
+  document.getElementById('print-area').innerHTML=v8DeliveryManifestHTML(batch,orders);toast(`${batch.id} printed and sent to ${driverById(driverId)?.name}'s delivery app`,true,'printer');renderPosContent();v8PrintReceiptArea();
 }
 
 renderPosDelivery = function v8RenderPosDelivery(content){
@@ -977,7 +993,7 @@ function v8PrintOrders(orders,label){
   if(!orders.length)return;
   document.getElementById('print-area').innerHTML=orders.map(receiptTicketHTML).join('');
   orders.forEach(o=>{v8AddActivity(o,'print',`${label||'Ticket'} printed`,{printer:'Star TSP100IV / browser print'});recordSync(`Ticket printed · #${o.ticket||o.id} · ${o.barcode}`);});
-  saveState();closePosModal();toast(`Sending ${orders.length} ticket${orders.length===1?'':'s'} to Star TSP100IV print dialog…`,true,'printer');setTimeout(()=>window.print(),80);
+  saveState();closePosModal();toast(`Sending ${orders.length} ticket${orders.length===1?'':'s'} to Star TSP100IV print dialog…`,true,'printer');v8PrintReceiptArea();
 }
 function v8PrintCreatedBatch(batchId){v8PrintOrders(state.orders.filter(o=>o.intakeBatchId===batchId).sort((a,b)=>Number(a.ticket)-Number(b.ticket)),'Intake ticket');}
 posDoPrint = function v8DoPrint(orderId){const o=state.orders.find(x=>x.id===orderId);if(o)v8PrintOrders([o],'Ticket');};
@@ -1023,7 +1039,7 @@ function v11PrintHardwareTest(){
   area.innerHTML=v11HardwareTestTicketHTML();
   recordSync('Star TSP100IV hardware test ticket opened');
   toast('Opening the Star TSP100IV 80mm print dialog…',true,'printer');
-  setTimeout(()=>window.print(),80);
+  v8PrintReceiptArea();
 }
 function v11ScannerTestKeydown(event){
   if(event.key!=='Enter')return;
@@ -1037,7 +1053,7 @@ function v11ScannerTestKeydown(event){
 const v11BaseRenderPosSettings=renderPosSettings;
 renderPosSettings=function v11RenderPosSettings(content){
   v11BaseRenderPosSettings(content);
-  content.insertAdjacentHTML('afterbegin',`<div class="pos-card v11-hardware-card"><div class="v11-hardware-head"><div><h3>${icon('printer',17)} Counter Hardware Profile</h3><div class="v2-note">Configured around the equipment and ticket sample provided for this counter.</div></div><span class="v2-badge">V12 WORKFLOW READY</span></div><div class="v11-hardware-grid"><div><small>PRINTER</small><strong>Star TSP100IV / TSP143IV-UEWB</strong><span>80mm thermal · 203 dpi · Ethernet/Wi-Fi capable</span></div><div><small>SCANNER</small><strong>NADAMOO USB 1D</strong><span>Keyboard mode · barcode text + Enter</span></div><div><small>BARCODE</small><strong>Code 128-B</strong><span>Long, compact barcode at ticket bottom</span></div><div><small>TICKET STOCK</small><strong>80mm preprinted roll</strong><span>White hanger art comes from the paper, not thermal ink</span></div></div><div class="v11-hardware-actions"><button class="btn btn-primary" onclick="v11PrintHardwareTest()">${icon('printer',15)} Print Hardware Test Ticket</button><div class="v11-scanner-test"><input class="text-input" autocomplete="off" placeholder="Click here, then scan the test barcode" onkeydown="v11ScannerTestKeydown(event)"><div id="v11-scanner-test-result">Waiting for a scan ending in Enter.</div></div></div><div class="v11-print-instructions"><strong>First print setup:</strong> choose the Star TSP100IV in the browser print window, paper size 80mm receipt, scale 100%, margins None, headers/footers Off. Browser testing uses this print window; fully silent Wi-Fi printing later requires Star WebPRNT/CloudPRNT or a small local print bridge.</div></div>`);
+  content.insertAdjacentHTML('afterbegin',`<div class="pos-card v11-hardware-card"><div class="v11-hardware-head"><div><h3>${icon('printer',17)} Counter Hardware Profile</h3><div class="v2-note">Configured around the equipment and ticket sample provided for this counter.</div></div><span class="v2-badge">V16.2 PRINT FIX</span></div><div class="v11-hardware-grid"><div><small>PRINTER</small><strong>Star TSP100IV / TSP143IV-UEWB</strong><span>80mm thermal · 203 dpi · Ethernet/Wi-Fi capable</span></div><div><small>SCANNER</small><strong>NADAMOO USB 1D</strong><span>Keyboard mode · barcode text + Enter</span></div><div><small>BARCODE</small><strong>Code 128-B</strong><span>Long, compact barcode at ticket bottom</span></div><div><small>TICKET STOCK</small><strong>80mm preprinted roll</strong><span>White hanger art comes from the paper, not thermal ink</span></div></div><div class="v11-hardware-actions"><button class="btn btn-primary" onclick="v11PrintHardwareTest()">${icon('printer',15)} Print Hardware Test Ticket</button><div class="v11-scanner-test"><input class="text-input" autocomplete="off" placeholder="Click here, then scan the test barcode" onkeydown="v11ScannerTestKeydown(event)"><div id="v11-scanner-test-result">Waiting for a scan ending in Enter.</div></div></div><div class="v11-print-instructions"><strong>First print setup:</strong> choose Star TSP100, paper size <strong>72mm x Receipt</strong>, scale 100%, margins None, headers/footers Off. V16.2 removes the full-screen page height before printing so the printer cuts after the ticket instead of feeding blank stock.</div></div>`);
 };
 
 let v11ScannerBuffer='',v11ScannerLastKey=0;

@@ -4,12 +4,26 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
 <meta name="theme-color" content="#123d2b" />
-<title>Hattan Cleaners — Ops Suite V16.1 Modern Supabase</title>
+<title>Hattan Cleaners — Ops Suite V21 Single Tag + Customer Trail</title>
+<script>document.documentElement.classList.add('v17-booting','v18-booting','v20-booting');</script>
+<style>
+  /* Inline on purpose: never expose stale/demo staff while the live session is restored. */
+  html.v18-booting body > :not(#v17-boot-screen){visibility:hidden!important}
+  html.v18-booting #v17-boot-screen{display:grid!important;visibility:visible!important}
+  html.v20-booting body{background:#123d2b!important}
+  html.v20-booting body > :not(#v17-boot-screen){display:none!important}
+  html.v20-booting #v17-boot-screen{display:grid!important;visibility:visible!important;opacity:1!important}
+</style>
 <link rel="stylesheet" href="v8-operations-upgrade.css" />
 <link rel="stylesheet" href="v13-accessibility.css" />
 <link rel="stylesheet" href="v14-workflow.css" />
 <link rel="stylesheet" href="v15-finance-workflow.css" />
 <link rel="stylesheet" href="v16-live-foundation.css" />
+<link rel="stylesheet" href="v17-store-pilot.css" />
+<link rel="stylesheet" href="v18-stability.css" />
+<link rel="stylesheet" href="v19-customer-controls.css" />
+<link rel="stylesheet" href="v20-bilingual-session.css" />
+<link rel="stylesheet" href="v21-single-tag-customer-trail.css" />
 <style>
   /* ============================= DESIGN SYSTEM ============================= */
   :root {
@@ -343,8 +357,30 @@
 
   #print-area { display:none; }
   @media print {
+    html, body {
+      width:72mm !important;
+      height:auto !important;
+      min-height:0 !important;
+      margin:0 !important;
+      padding:0 !important;
+      overflow:visible !important;
+      background:#fff !important;
+    }
     body > *:not(#print-area) { display:none !important; }
-    #print-area { display:block !important; width:80mm; padding:6mm; margin:0 auto; font-family:'Courier New', monospace; font-size:12px; }
+    #print-area {
+      display:block !important;
+      position:static !important;
+      width:72mm !important;
+      max-width:72mm !important;
+      height:auto !important;
+      min-height:0 !important;
+      padding:0 !important;
+      margin:0 !important;
+      overflow:visible !important;
+      font-family:'Courier New', monospace;
+      font-size:12px;
+      background:#fff !important;
+    }
   }
 
   .conn-pill { display:inline-flex; align-items:center; gap:7px; padding: 7px 13px; border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 800; cursor: pointer; user-select: none; border: 1px solid transparent; }
@@ -622,6 +658,9 @@
 </style>
 </head>
 <body>
+<div id="v17-boot-screen" class="v17-boot-screen" role="status" aria-live="polite">
+  <div class="v17-boot-card"><div class="logo-mark"></div><strong>Hattan Cleaners</strong><span id="v18-boot-message">Restoring your secure POS session…</span><button id="v18-boot-retry" class="v18-boot-retry" type="button" onclick="location.reload()" hidden>Retry connection</button></div>
+</div>
 
 <div class="demo-switcher">
   <span class="ds-label">Prototype viewer</span>
@@ -2160,7 +2199,7 @@ function posShellHTML() {
   return `
   <div class="pos-shell">
     <aside class="pos-sidebar">
-      <div class="ps-brand"><div class="logo-mark" style="width:30px;height:30px;"></div><div class="wordmark">Hattan Cleaners<small>Staff POS</small></div></div>
+      <div class="ps-brand"><div class="logo-mark" style="width:30px;height:30px;"></div><div class="wordmark">Hattan Cleaners<small>Staff POS · V23.5 Stable</small></div></div>
       <nav class="pos-nav">
         ${POS_NAV_ITEMS.map(n => `<button class="${state.posNav === n.id ? 'active' : ''}" onclick="posGoTo('${n.id}')">${icon(n.icon, 17)}<span>${n.label}</span></button>`).join('')}
       </nav>
@@ -3480,7 +3519,7 @@ function posDoPrint(orderId) {
   closePosModal();
   recordSync(`Ticket printed · ${o.channel === 'counter' ? '#' + o.ticket : o.id}`);
   toast('Opening the Star TSP100 print dialog…', true, 'printer');
-  setTimeout(() => window.print(), 80);
+  setTimeout(() => typeof v8PrintReceiptArea === 'function' ? v8PrintReceiptArea(0) : window.print(), 80);
 }
 function posOpenEpsonInfo(orderId) {
   openPosModal(`
@@ -4647,5 +4686,19 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="v14-workflow.js"></script>
 <script src="v15-finance-workflow.js"></script>
 <script src="v16-live-foundation.js"></script>
+<script src="v17-store-pilot.js"></script>
+<script src="v18-stability.js"></script>
+<script src="v19-customer-controls.js"></script>
+<script src="v20-bilingual-session.js"></script>
+<script src="v21-single-tag-customer-trail.js"></script>
+<link rel="stylesheet" href="v22-customer-finance-spanish.css">
+<script src="v22-customer-finance-spanish.js"></script>
+<link rel="stylesheet" href="v23-ai-intake-print.css">
+<script src="v23-ai-intake-print.js"></script>
+<script src="v23-stable-bootstrap.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<link rel="stylesheet" href="v25-migration-center.css">
+<script src="v25-migration-center.js"></script>
 </body>
 </html>

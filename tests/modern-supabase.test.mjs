@@ -59,6 +59,7 @@ test('browser runtime configuration never exposes server secrets', async () => {
   process.env.SUPABASE_SECRET_KEY = 'sb_secret_must_not_leak';
   process.env.CLOVER_PRIVATE_TOKEN = 'clover_private_must_not_leak';
   process.env.HATTAN_SESSION_SECRET = 'session_secret_must_not_leak_123456789';
+  process.env.OPENAI_API_KEY = 'openai_secret_must_not_leak';
 
   const response = await runtimeConfig({ httpMethod:'GET' });
   const serialized = response.body;
@@ -66,5 +67,7 @@ test('browser runtime configuration never exposes server secrets', async () => {
   assert.equal(serialized.includes('sb_secret_must_not_leak'), false);
   assert.equal(serialized.includes('clover_private_must_not_leak'), false);
   assert.equal(serialized.includes('session_secret_must_not_leak'), false);
+  assert.equal(serialized.includes('openai_secret_must_not_leak'), false);
+  assert.equal(JSON.parse(serialized).voice.configured, true);
   assert.equal(serialized.includes('"d"'), false);
 });

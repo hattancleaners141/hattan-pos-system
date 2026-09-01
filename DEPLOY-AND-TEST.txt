@@ -1,4 +1,4 @@
-HATTAN OPS SUITE V16.1 — MODERN SUPABASE LIVE FOUNDATION
+HATTAN OPS SUITE V21 SINGLE TAG + CUSTOMER TRAIL
 
 START HERE
 1. Read LIVE-SETUP-GUIDE.md before adding real credentials.
@@ -15,7 +15,74 @@ LOCAL DEMO USERS
 These demo PINs are ignored in shared/live mode. Shared staff accounts are
 created on the secure server and PINs are stored only as salted hashes.
 
-V16.1 TESTS
+V21 NEW-FIX ACCEPTANCE TESTS
+0. One-tag production workflow
+   - Open Tag Assign and confirm each eligible ticket has one Tag Number field.
+   - Confirm Tag 1 through Tag 5 are absent in regular and Simple modes.
+   - Type one tag and press Enter; confirm it saves and the row leaves the queue.
+   - Confirm tag recall remains available and keeps its timestamp/history.
+
+1. Wash & Fold never requires a garment tag
+   - Create Dry Cleaning, Laundered Shirts, Alterations and Wash & Fold tickets.
+   - Confirm only the first three appear in Tag Assign.
+   - Scan/type the Wash & Fold ticket in Tag Assign and confirm it is rejected.
+   - Confirm Ticket List and the post-create message say `Tag not required`.
+
+2. Recently Viewed Customers
+   - View several customer profiles, then open Customers > Recently Viewed.
+   - Confirm the newest customer is first and search filters the history.
+   - Confirm View Profile and Drop Off work from every recent-customer card.
+
+3. Customer-profile Drop Off
+   - Open a customer profile and select Drop Off for that customer.
+   - Confirm New Ticket opens with the correct customer already selected.
+   - For a delivery-default customer, confirm Delivery is selected automatically.
+   - Start an unsaved visit for another customer and confirm the warning prevents
+     accidental loss unless staff explicitly continue.
+
+V20 BILINGUAL-SESSION REGRESSION TESTS
+0. Safe refresh while signed in
+   - Open the live Counter page while signed in and press Refresh.
+   - One green `Refreshing Hattan POS…` screen may appear briefly.
+   - The final Counter page must appear without Employee Sign In in between.
+   - Jordan Lee and Sam Whitfield must never flash on a shared/live site.
+   - Confirm the latest information from the other counter is visible.
+
+1. Wash & Fold bilingual instructions
+   - Start a Wash & Fold ticket and open Special instructions.
+   - Confirm every button shows English with bold Chinese directly beneath it.
+   - Confirm Cold wash / 冷水洗涤 is available.
+   - Turn `中文 under English` off and on; the screen should update immediately.
+   - Confirm the separate Settings option still controls Chinese on printouts.
+
+V19 CUSTOMER-CONTROL REGRESSION TESTS
+0. Customer finance at New Ticket
+   - Select a customer with an unpaid balance and store credit.
+   - Confirm both amounts appear at the upper right.
+   - Open Generate Report, Text Report and Email Report.
+   - Choose Pay Now and verify store credit remains off until staff chooses Yes.
+   - Confirm the 3% card fee is calculated only on the amount left after credit.
+
+1. Delivery-default safeguard
+   - Set a customer profile to Delivery and start a new ticket.
+   - Confirm Delivery is selected automatically.
+   - Choose Pickup and confirm the warning appears.
+   - Keep Delivery once, then test the one-ticket Pickup override.
+   - Confirm the saved customer profile still says Delivery afterward.
+
+2. Tag Assign and bilingual production
+   - Confirm Dry Cleaning, Laundered Shirts and Alterations appear in Tag Assign.
+   - Confirm Wash & Fold never appears and cannot be added by barcode scan.
+   - Confirm White is available and Black is absent.
+   - In Wash & Fold, select Low dry, No softener, Delicate cycle and
+     Separate darks & whites; confirm bold Chinese appears under each English label.
+
+3. Thermal ticket priorities
+   - Print a Delivery customer with apartment 2C and confirm `2C *` is very large at top.
+   - Print a same-day order and confirm RUSH is very large at top.
+   - Confirm the receipt cuts immediately after the barcode with no long blank feed.
+
+V18 STABILITY REGRESSION TESTS
 0. Login layout
    - Employee names and Manager badges stay inside their cards.
    - Change PIN is a separate full-width row and does not cover the name.
@@ -54,6 +121,50 @@ V16.1 TESTS
    - Pickup, pickup recall, full ticket editing, store credit, A/R search.
    - Star TSP100IV 80mm printing and NADAMOO Code 128 scan + Enter.
 
+6. Star receipt length
+   - In Chrome choose Star TSP100, 72mm x Receipt, Portrait, scale 100%,
+     margins None, headers/footers Off, and background graphics On.
+   - Print one hardware test ticket first.
+   - Confirm it cuts directly after the barcode/test footer without feeding a
+     long unused section of the preprinted roll.
+
+7. V18 ticket and production checks
+   - Wash & Fold prints bag color and detergent/dry preferences in larger bold text.
+   - RUSH prints in a bold box at the very top and defaults to 4:00 PM.
+   - Apartment/unit prints in large type at the top of the ticket.
+   - Change the default RUSH time in Settings and override it on one ticket.
+   - Confirm special-material upcharges are added once per line, not per piece.
+   - Dry Cleaning, Laundered Shirts and Alterations appear in Tag Assign;
+     Wash & Fold does not. White is available and Black is removed.
+
+8. Windows voice and startup checks
+   - Add OPENAI_API_KEY as a secret Netlify environment variable and redeploy.
+   - Settings > Windows Voice Intake > Test Windows Microphone shows a moving meter.
+   - Choose the correct Windows input; this choice stays on that counter.
+   - Use the main microphone button to record, stop and transcribe, then review
+     the transcript before Interpret.
+   - Dictate multiple services and confirm each becomes a separate ticket draft.
+   - Reload while signed in; the secure session restores without sample staff or
+     the wrong page flashing. A normal reload does not require another PIN.
+   - Set one due date to today and confirm RUSH appears onscreen and at the top
+     of the printed ticket automatically.
+   - Confirm the full Tomorrow button is visible on the Windows counter.
+   - Tab through Back to Counter and buttons; no typing caret should appear on them.
+
+9. Legacy import pilot
+   - Manager downloads a backup before importing.
+   - Import a small customer CSV first and verify address, apartment, balance,
+     store credit, customer number, notes and delivery/pickup default.
+   - Remove one incorrect preview row and confirm it is not imported.
+   - Import a small ticket-history file and verify partial balances and dates.
+   - Screenshot/photo extraction is optional and requires OPENAI_API_KEY in Netlify.
+     Review every extracted row; never upload payment-card images or passwords.
+
+10. Secure new-customer card flow
+   - In shared mode, New Customer does not accept raw card data.
+   - Create the customer, open the customer profile, and use Add Card Securely.
+   - Confirm Clover-hosted fields appear and the POS retains only brand/last four.
+
 DO NOT USE LIVE CARDS YET IF
 - Clover has not enabled and confirmed multi-pay/card-on-file for the live MID.
 - The Netlify secure Functions connection test does not pass.
@@ -61,6 +172,20 @@ DO NOT USE LIVE CARDS YET IF
 - Two-counter, refund, printer, barcode, and delivery tests have not passed.
 - Staff are still using demo/shared PINs.
 
-V16.1 is the correct live architecture foundation. Full production rollout still
+V21 keeps the V20 bilingual/session fixes, V19 customer controls, V18 stability
+layer, V17 store-pilot architecture and receipt-length fix. Full production rollout still
 requires Clover confirmation/certification, monitoring, backups, staff training,
 and a controlled pilot. See LIVE-SETUP-GUIDE.md.
+
+V27 CLEANBASE TICKET PHOTO IMPORT — REQUIRED ONE-TIME SETUP
+------------------------------------------------------------
+1. In Netlify open Site configuration > Environment variables.
+2. Add OPENAI_API_KEY as a secret environment variable available to Functions.
+3. Optional: OPENAI_IMPORT_MODEL=gpt-4.1-mini
+4. Trigger a fresh deploy after saving the variable.
+5. Sign in as Manager > Migration.
+6. Upload one JPG ticket screenshot first. It should become READY and Detected data > Tickets should increase to 1.
+7. Then upload a ZIP containing JPG/PNG ticket screenshots. V27 reads up to 500 photos per ZIP.
+8. Review extracted customer/ticket rows before Final Import.
+
+IMPORTANT: Do not put OPENAI_API_KEY in index.html, GitHub source, or browser JavaScript. It belongs only in Netlify environment variables.

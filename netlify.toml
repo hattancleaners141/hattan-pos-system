@@ -84,3 +84,75 @@
   [headers.values]
     Content-Type = "text/css; charset=UTF-8"
     Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v17-store-pilot.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v17-store-pilot.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v18-stability.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v18-stability.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v19-customer-controls.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v19-customer-controls.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v20-bilingual-session.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v20-bilingual-session.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v21-single-tag-customer-trail.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v21-single-tag-customer-trail.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v25-migration-center.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/v25-migration-center.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "no-cache"
