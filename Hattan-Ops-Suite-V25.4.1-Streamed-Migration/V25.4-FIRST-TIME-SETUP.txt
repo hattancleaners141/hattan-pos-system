@@ -1,0 +1,27 @@
+HATTAN OPS SUITE V25.4 — ONE-TIME SETUP
+
+1. In Supabase, open SQL Editor.
+2. Open supabase/schema.sql from this package, paste the complete file, and run it.
+3. Confirm the SQL Editor reports success. This creates legacy_customers,
+   migration_imports, and hattan_upsert_legacy_customers.
+4. Replace the complete GitHub repository contents with this V25.4 package.
+5. Let Netlify deploy the repository. Do not upload only index.html.
+6. Sign in as Manager and open Migration.
+7. Select CustomerListReport.txt. It should show as a large server import and
+   should not freeze the page.
+8. Press Final Import. Progress advances after each 500-row batch.
+9. After completion, search for several known customers by customer number,
+   name, phone, and address from Customers and from new-ticket intake.
+10. Then upload vcust.dbf to add notes/preferences and the conveyor DBF for
+    active rack locations.
+
+SAFE RE-RUN BEHAVIOR
+
+- The exact same completed file is skipped by SHA-256 fingerprint.
+- A newer/different export updates matching customer numbers and adds new ones.
+- Blank values never erase already-imported nonblank values.
+- If the browser or network interrupts an import, reselect the file and run it
+  again. Database upserts prevent duplicate customers.
+
+DO NOT upload raw card numbers or CVV data. Cards on file require the separate
+processor token migration lane.

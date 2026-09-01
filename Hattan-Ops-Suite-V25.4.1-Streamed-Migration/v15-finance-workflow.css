@@ -1,0 +1,84 @@
+/* Hattan Ops V15 — financial corrections and full-ticket editing */
+
+.v15-credit-balance {
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  margin:0 0 16px; padding:16px 18px; border-radius:14px;
+  background:linear-gradient(135deg,var(--brand-deep),#255f48); color:#fff;
+}
+.v15-credit-balance span { font-size:13px; opacity:.82; }
+.v15-credit-balance strong { font-size:28px; letter-spacing:-.03em; }
+.v15-credit-kpi { background:var(--brand-tint-1); border-radius:10px; }
+.v15-two-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.v15-two-actions .btn { justify-content:center; }
+
+.v15-money-ledger { border:1px solid var(--hairline); border-radius:12px; overflow:hidden; }
+.v15-money-ledger > div { display:flex; flex-direction:column; gap:3px; padding:10px 12px; border-bottom:1px solid var(--hairline); background:#fff; }
+.v15-money-ledger > div:last-child { border-bottom:0; }
+.v15-money-ledger small { color:var(--ink-secondary); }
+
+.v15-refund-kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px; }
+.v15-refund-kpis > div { padding:12px; border:1px solid var(--hairline); border-radius:10px; background:var(--surface-sunken); }
+.v15-refund-kpis small { display:block; color:var(--ink-secondary); margin-bottom:4px; }
+.v15-refund-kpis strong { font-size:17px; }
+.v15-refund-history { margin-top:10px; padding:10px 12px; border:1px solid #e5c977; border-radius:10px; background:#fff9e7; }
+.v15-refund-history > strong { display:block; color:#775b08; margin-bottom:6px; }
+.v15-refund-history > div { display:flex; flex-direction:column; gap:2px; padding:6px 0; border-top:1px solid rgba(119,91,8,.16); }
+.v15-refund-history small { color:#725f29; }
+.v7-balance.warn { color:#775b08; background:#fff3c7; }
+
+.v15-wide-modal { width:min(1080px,calc(100vw - 32px)) !important; max-width:1080px !important; max-height:92vh !important; }
+.v15-ticket-editor { min-width:0; }
+.v15-editor-head { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; padding-bottom:14px; border-bottom:1px solid var(--hairline); }
+.v15-editor-head h3 { margin:0 0 4px; }
+.v15-editor-head p { margin:0; color:var(--ink-secondary); }
+.v15-editor-total { min-width:150px; padding:12px 16px; border-radius:12px; background:var(--brand-tint-1); text-align:right; }
+.v15-editor-total small { display:block; color:var(--ink-secondary); }
+.v15-editor-total strong { display:block; margin-top:2px; font-size:24px; color:var(--brand-deep); }
+.v15-editor-due { display:grid; grid-template-columns:minmax(220px,1fr) auto auto; gap:10px; align-items:end; margin:16px 0; padding:14px; border-radius:12px; background:var(--surface-sunken); }
+.v15-editor-due label span,.v15-edit-line label span { display:block; margin-bottom:5px; font-size:11px; font-weight:800; color:var(--ink-secondary); text-transform:uppercase; letter-spacing:.04em; }
+.v15-rush-button { min-height:44px; border:0; border-radius:9px; background:#bb2525; color:#fff; font-weight:900; padding:0 16px; }
+.v15-rush-button.active { box-shadow:0 0 0 4px rgba(187,37,37,.18); background:#8f1515; }
+.v15-edit-lines { display:flex; flex-direction:column; gap:12px; margin-bottom:12px; }
+.v15-edit-line { position:relative; display:grid; grid-template-columns:2fr .72fr 1.25fr 1fr .85fr; gap:10px; padding:14px; border:1px solid var(--hairline); border-radius:13px; background:#fff; }
+.v15-edit-line-head { grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--hairline); padding-bottom:8px; }
+.v15-edit-line label.wide { grid-column:1/5; }
+.v15-edit-line-total { align-self:end; justify-self:end; padding:11px 0; white-space:nowrap; color:var(--ink-secondary); }
+.v15-remove-line { display:inline-flex; align-items:center; gap:5px; border:0; background:transparent; color:var(--status-critical); font-weight:800; cursor:pointer; }
+.v15-editor-footer { position:sticky; bottom:-20px; display:flex; justify-content:flex-end; gap:10px; margin:16px -20px -20px; padding:14px 20px; border-top:1px solid var(--hairline); background:rgba(255,255,255,.96); backdrop-filter:blur(8px); }
+
+.v15-ar-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:14px; }
+.v15-ar-head h3 { margin:0 0 3px; }
+.v15-ar-head .pos-search { width:min(430px,48%); max-width:none; }
+.v15-ar-head .pos-search input { font-size:16px; min-height:46px; }
+
+.v15-detail-nav { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; margin:-2px 0 14px; padding:9px; border:1px solid var(--hairline); border-radius:10px; background:var(--surface-sunken); }
+.v15-detail-nav button { display:flex; align-items:center; justify-content:center; gap:5px; min-height:34px; border:0; border-radius:8px; background:#fff; color:var(--brand-deep); font-weight:800; cursor:pointer; }
+.v15-detail-nav button:last-child { justify-self:stretch; }
+.v15-detail-nav button:disabled { opacity:.35; cursor:default; }
+.v15-detail-nav strong { font-size:12px; color:var(--ink-secondary); }
+.v15-detail-corrections { margin:14px 0; padding:12px; border:1px solid var(--hairline); border-radius:12px; background:var(--surface-sunken); }
+.v15-detail-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.v15-refund-history + .v15-detail-actions { margin-top:10px; }
+
+.v15-try-again { border:1.5px solid var(--brand-deep) !important; color:var(--brand-deep) !important; font-weight:900 !important; }
+.v15-draft-count { margin-top:7px; text-align:center; color:var(--ink-secondary); font-size:11px; }
+
+@media (max-width:860px) {
+  .v15-edit-line { grid-template-columns:1fr 1fr; }
+  .v15-edit-line-head,.v15-edit-line label.wide { grid-column:1/-1; }
+  .v15-edit-line-total { justify-self:start; }
+  .v15-editor-due { grid-template-columns:1fr 1fr; }
+  .v15-editor-due label { grid-column:1/-1; }
+  .v15-ar-head { align-items:stretch; flex-direction:column; }
+  .v15-ar-head .pos-search { width:100%; }
+}
+@media (max-width:560px) {
+  .v15-refund-kpis,.v15-two-actions { grid-template-columns:1fr; }
+  .v15-editor-head { flex-direction:column; }
+  .v15-editor-total { width:100%; text-align:left; }
+  .v15-edit-line,.v15-editor-due { grid-template-columns:1fr; }
+  .v15-edit-line label.wide,.v15-edit-line-head,.v15-editor-due label { grid-column:1; }
+  .v15-editor-footer { flex-direction:column-reverse; }
+  .v15-detail-nav { grid-template-columns:1fr 1fr; }
+  .v15-detail-nav strong { grid-column:1/-1; grid-row:1; text-align:center; }
+}
