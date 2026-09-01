@@ -1,0 +1,12 @@
+V26 TICKET PHOTO IMPORT
+
+Migration now accepts .ZIP folders containing CleanBase ticket screenshots.
+- Up to 500 supported files per ZIP
+- Up to 250 MB per ZIP
+- JPG/PNG ticket photos are AI-extracted one at a time
+- Customer/profile information visible in the screenshot is used to link the historical ticket
+- Existing ticket numbers are updated instead of duplicated
+- Final Import is still manager-confirmed and creates a backup first
+
+Netlify requirement: OPENAI_API_KEY must be configured for screenshot extraction.
+Internet access is required in the browser to load JSZip from jsDelivr.

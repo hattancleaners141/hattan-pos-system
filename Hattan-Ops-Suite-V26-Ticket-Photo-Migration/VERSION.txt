@@ -1,0 +1,2 @@
+Hattan Ops Suite V26 — CleanBase Ticket Photo ZIP Migration
+Build 26.0.0-ticket-photo-zip
