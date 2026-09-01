@@ -1,0 +1,2 @@
+Hattan Ops Suite V27 — Ticket Photo Migration
+Build 27.0.0-ticket-photo-import
