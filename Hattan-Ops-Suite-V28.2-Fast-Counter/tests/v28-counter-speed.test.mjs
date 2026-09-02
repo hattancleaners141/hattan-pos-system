@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const js=fs.readFileSync(new URL('../v28-counter-speed.js',import.meta.url),'utf8');
+const css=fs.readFileSync(new URL('../v28-counter-speed.css',import.meta.url),'utf8');
+const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+assert.match(js,/service === 'dryclean' \|\| service === 'alterations'/);
+assert.doesNotMatch(js,/service === 'shirts' \|\| service === 'alterations'/);
+assert.match(js,/v28PickAndAddColor/);
+assert.match(js,/\[1,2,3,4,5,6,7,8,9\]/);
+assert.match(css,/v28-big-search/);
+assert.match(css,/v28-color-grid/);
+assert.match(html,/v28-counter-speed\.js/);
+assert.match(html,/v28-counter-speed\.css/);
+console.log('V28.2 counter speed checks passed');

@@ -1,0 +1,79 @@
+.v25-migration-wrap{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,.6fr);gap:18px}.v25-drop{border:2px dashed #c9c9c9;border-radius:16px;padding:28px;text-align:center;background:#fff;cursor:pointer;transition:.18s}.v25-drop.drag{border-color:#111;background:#f6f6f4}.v25-drop h3{margin:8px 0 6px}.v25-drop input{display:none}.v25-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.v25-kpi{border:1px solid var(--border,#ddd);border-radius:12px;padding:12px;background:#fff}.v25-kpi strong{display:block;font-size:22px}.v25-step{display:flex;gap:9px;align-items:center;padding:9px 0;border-bottom:1px solid #eee}.v25-step:last-child{border-bottom:0}.v25-step-num{width:25px;height:25px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}.v25-file{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #e7e7e7;border-radius:10px;margin-top:8px}.v25-file-main{flex:1;min-width:0}.v25-file-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v25-file-sub{font-size:12px;color:#737373}.v25-status{font-size:12px;padding:4px 8px;border-radius:999px;background:#eee}.v25-status.ready{background:#e8f4eb;color:#245c31}.v25-status.warn{background:#fff3d6;color:#785800}.v25-status.bad{background:#fde8e8;color:#8a2424}.v25-review{max-height:420px;overflow:auto;border:1px solid #e2e2e2;border-radius:12px}.v25-review table{width:100%;border-collapse:collapse;font-size:12px}.v25-review th,.v25-review td{padding:8px 10px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}.v25-review th{position:sticky;top:0;background:#fafafa;z-index:1}.v25-security{border-left:4px solid #111;background:#f7f7f5;padding:12px 14px;border-radius:8px}.v25-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.v25-map-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v25-warnings{max-height:180px;overflow:auto}.v25-danger{border:1px solid #e7b9b9;background:#fff8f8}.v25-progress{height:8px;background:#ececec;border-radius:999px;overflow:hidden;margin-top:8px}.v25-progress>span{display:block;height:100%;background:#111;width:0%;transition:.2s}.v25-hidden{display:none!important}@media(max-width:980px){.v25-migration-wrap{grid-template-columns:1fr}.v25-kpis{grid-template-columns:repeat(2,1fr)}.v25-map-grid{grid-template-columns:1fr}}
+
+
+/* V28.1 — migration upload UI stabilization */
+.v25-migration-wrap{align-items:start;}
+.v25-migration-wrap>.pos-card,.v25-migration-wrap>div>.pos-card{overflow:visible;}
+.v25-drop{
+  box-sizing:border-box;
+  display:block;
+  width:100%;
+  min-height:250px;
+  margin:18px 0 12px;
+  padding:0;
+  border:2px dashed #c9c9c9;
+  border-radius:18px;
+  background:#fff;
+  cursor:pointer;
+  overflow:hidden;
+}
+.v25-drop-inner{
+  box-sizing:border-box;
+  min-height:246px;
+  width:100%;
+  padding:34px 30px 30px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-align:center;
+}
+.v25-upload-icon{
+  width:48px;
+  height:48px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:38px;
+  line-height:1;
+  margin-bottom:2px;
+}
+.v25-drop h3{
+  width:100%;
+  max-width:720px;
+  margin:2px auto 0;
+  font-size:20px;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.v25-drop-copy,.v25-drop-note{
+  width:100%;
+  max-width:720px;
+  color:#777;
+  font-size:14px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.v25-drop-note{font-size:13px;color:#8a8a8a;}
+.v25-choose-btn{
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+  width:auto!important;
+  min-width:142px;
+  min-height:44px;
+  margin-top:12px!important;
+  padding:10px 22px!important;
+  flex:0 0 auto;
+  white-space:nowrap;
+}
+.v25-progress{margin:10px 0 14px;}
+#v25-file-list{display:grid;gap:8px;}
+.v25-file{margin-top:0;min-height:58px;background:#fff;}
+@media(max-width:700px){
+  .v25-drop{min-height:220px;}
+  .v25-drop-inner{min-height:216px;padding:26px 18px 24px;}
+  .v25-drop h3{font-size:18px;}
+  .v25-drop-copy{font-size:13px;}
+}
