@@ -1,0 +1,18 @@
+Hattan Ops Suite V28.3 — Guided Fast Counter
+
+Changes from V28.2:
+- Tag Assign now includes ONLY Dry Cleaning and Alterations.
+- Laundered Shirts are excluded from physical tag assignment.
+- Wash & Fold remains excluded from physical tag assignment.
+- Customer Lookup is larger and easier to use at the counter.
+- Service tabs and garment buttons use larger touch targets and type.
+- Add Services now follows: 1. Garment Type, 2. Quantity, 3. Details, 4. Color.
+- Dry Cleaning has a 1–9 quantity keypad plus a direct typed quantity field with Enter support.
+- The old All Garments dropdown is replaced by a large More Garment Types pop-up.
+- Garment color and Wash & Fold bag color are never assumed; staff must select them.
+- Laundered Shirts has a much larger quantity field; Enter adds the shirts.
+- Customer profiles now have optional automatic shirt packaging, starch and pants-crease defaults with one-time override confirmation.
+- This Customer Visit stays visible and scrollable while moving down the counter page.
+- Up/Down arrow keys scroll the Counter page when no input is active.
+- Color choices use larger visible color swatches.
+- Simple Counter receives the same quantity keypad and color-to-add behavior.
