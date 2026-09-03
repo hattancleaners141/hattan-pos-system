@@ -1,0 +1,41 @@
+Hattan Ops Suite V28.4 — Line Controls & Ticket Fix
+
+Corrected V28.4 build:
+- The final receipt is now generated directly by V28.4 instead of relying on an older-ticket HTML replacement.
+- Delivery apartment/unit is rendered as a large, black, bold, centered ticket hero.
+- Receipt content uses a conservative 68 mm print width with protected right-side money columns.
+- This Customer Visit remains sticky inside the actual scrolling POS surface, including narrower counter layouts.
+- Up/Down arrows scroll the active POS page or modal whenever the employee is not typing in a field.
+- Multi-quantity dry cleaning is entered one piece per color tap; garment and special material stay selected while the remaining count decreases.
+- Repeated taps on the same color merge correctly, while different colors remain separate lines.
+- AI intake distributes explicit colors across the stated quantity without multiplying the piece count.
+- “3 blouses, one is blue, navy, green silk” is verified as exactly 3 pieces, one per color, all with silk upcharge.
+- AI/voice source wording is removed from the customer’s printed ticket.
+
+Changes from V28.3:
+- Garment and Wash & Fold bag colors now include explicit None and Multi Color choices.
+- Dry-cleaning prices can be retyped for one-off scenarios, both before and after adding a line.
+- A large No Charge / Do Over control is available before and after adding a garment.
+- Stain, Delicate and Defective Condition flags can be added to each garment.
+- Each garment/order line has its own editable notes field.
+- Printed apartment/unit numbers are large, bold and centered near the top of every ticket.
+- Thermal-ticket totals have extra right-side clearance so subtotal and balance amounts do not clip.
+- Imported multi-piece garment descriptions print as individually spaced lines.
+- Printed piece totals are recalculated from line quantities, including legacy imported tickets.
+
+Carried forward from V28.3:
+- Tag Assign now includes ONLY Dry Cleaning and Alterations.
+- Laundered Shirts are excluded from physical tag assignment.
+- Wash & Fold remains excluded from physical tag assignment.
+- Customer Lookup is larger and easier to use at the counter.
+- Service tabs and garment buttons use larger touch targets and type.
+- Add Services now follows: 1. Garment Type, 2. Quantity, 3. Details, 4. Color.
+- Dry Cleaning has a 1–9 quantity keypad plus a direct typed quantity field with Enter support.
+- The old All Garments dropdown is replaced by a large More Garment Types pop-up.
+- Garment color and Wash & Fold bag color are never assumed; staff must select them.
+- Laundered Shirts has a much larger quantity field; Enter adds the shirts.
+- Customer profiles now have optional automatic shirt packaging, starch and pants-crease defaults with one-time override confirmation.
+- This Customer Visit stays visible and scrollable while moving down the counter page.
+- Up/Down arrow keys scroll the Counter page when no input is active.
+- Color choices use larger visible color swatches.
+- Simple Counter receives the same quantity keypad and color-to-add behavior.
