@@ -1,0 +1,90 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.clover.com https://checkout.sandbox.dev.clover.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://checkout.clover.com https://checkout.sandbox.dev.clover.com; frame-src https://checkout.clover.com https://checkout.sandbox.dev.clover.com; font-src 'self' data:; base-uri 'self'; form-action 'self'
+
+/index.html
+  Content-Type: text/html; charset=UTF-8
+  Cache-Control: no-cache
+
+/v8-operations-upgrade.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v8-operations-upgrade.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v13-accessibility.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v13-accessibility.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v14-workflow.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v14-workflow.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v15-finance-workflow.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v15-finance-workflow.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v16-live-foundation.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v16-live-foundation.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v17-store-pilot.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v17-store-pilot.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v18-stability.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v18-stability.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v19-customer-controls.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v19-customer-controls.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v20-bilingual-session.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v20-bilingual-session.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
+
+/v21-single-tag-customer-trail.js
+  Content-Type: application/javascript; charset=UTF-8
+  Cache-Control: no-cache
+
+/v21-single-tag-customer-trail.css
+  Content-Type: text/css; charset=UTF-8
+  Cache-Control: no-cache
