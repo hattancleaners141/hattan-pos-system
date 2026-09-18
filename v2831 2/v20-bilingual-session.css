@@ -1,0 +1,36 @@
+/* Hattan Ops V20 — bilingual instruction buttons and atomic startup */
+
+.v20-instruction-head{align-items:flex-start!important;gap:10px!important}
+.v20-instruction-actions{display:flex;justify-content:flex-end;align-items:center;gap:7px;flex-wrap:wrap}
+.v20-zh-toggle{
+  min-height:34px;padding:7px 10px;border:1px solid #9dbfa9;border-radius:999px;
+  background:#fff;color:#174b32;font-size:11px;font-weight:900;cursor:pointer
+}
+.v20-zh-toggle span{font-family:"Microsoft YaHei","Noto Sans SC",Arial,sans-serif;font-size:13px;font-weight:1000}
+.v20-zh-toggle.on{border-color:#0e5c37;background:#e6f4eb;box-shadow:inset 0 0 0 1px #0e5c37}
+
+.v20-instruction-options{align-items:stretch!important}
+.v20-bilingual-instruction{
+  min-height:58px!important;padding:9px 13px!important;text-align:left!important;
+  display:inline-flex!important;flex-direction:column!important;justify-content:center!important;align-items:flex-start!important
+}
+.v20-instruction-en{display:block;font-size:13px;font-weight:850;line-height:1.2}
+.v20-instruction-zh,.v20-option-zh{
+  display:block!important;margin-top:4px!important;
+  color:#102a1e!important;font-family:"Microsoft YaHei","Noto Sans SC",Arial,sans-serif!important;
+  font-size:15px!important;line-height:1.15!important;font-weight:1000!important;opacity:1!important
+}
+.v20-bilingual-instruction.selected .v20-instruction-zh,
+.v4-option.on .v20-option-zh,
+.v14-instruction-chip.selected .v20-option-zh{color:inherit!important}
+.v4-option .v20-option-zh,.v14-instruction-chip .v20-option-zh{font-size:14px!important}
+
+.v20-loading-shell{min-height:100vh;background:#123d2b;color:#fff}
+.v20-loading-note{margin-top:6px;font-size:12px;opacity:.78}
+
+@media(max-width:700px){
+  .v20-instruction-head{display:block!important}
+  .v20-instruction-actions{justify-content:flex-start;margin-top:9px}
+  .v20-bilingual-instruction{min-height:64px!important}
+}
+
