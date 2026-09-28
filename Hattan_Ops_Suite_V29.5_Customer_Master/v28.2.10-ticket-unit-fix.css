@@ -1,0 +1,29 @@
+/* V28.2.10 — apartment/unit is the dominant centered thermal-ticket identifier */
+.v28210-unit-hero {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 2.2mm 0;
+  padding: 0;
+  text-align: center !important;
+  font-size: 54px !important;
+  line-height: .9 !important;
+  font-weight: 1000 !important;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+@media print {
+  #print-area .v28210-unit-hero,
+  .v8-receipt-printing #print-area .v28210-unit-hero {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 0 2.2mm 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+    font-size: 54px !important;
+    line-height: .9 !important;
+    font-weight: 1000 !important;
+    letter-spacing: 1px !important;
+    white-space: nowrap !important;
+  }
+}
