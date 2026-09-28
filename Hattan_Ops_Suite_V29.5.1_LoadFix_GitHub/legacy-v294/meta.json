@@ -1,0 +1,13 @@
+{
+  "version": "29.4-4Y",
+  "source": "CleanBase current snapshot",
+  "vworkHeaderDate": "2026-09-18",
+  "latestTicketActivity": "2026-09-17T17:33:18.999000",
+  "customers": 27533,
+  "masterTickets": 158540,
+  "ticketLines": 157822,
+  "note": "All CleanBase customer identities retained; detailed ticket history limited to 2022-09-19 through 2026-09-18 for GitHub production deployment.",
+  "historyWindowStart": "2022-09-19",
+  "historyWindowEnd": "2026-09-18",
+  "fourYearMasterTickets": 55586
+}

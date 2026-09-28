@@ -1,0 +1,2 @@
+Hattan Ops Suite V29.5.1
+Customer directory load/order correction.
