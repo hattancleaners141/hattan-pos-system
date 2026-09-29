@@ -536,7 +536,7 @@ posCompleteDropOff = function v17CompleteDropOff() {
   groups.forEach(group => {
     const service = group.service, key = v14GroupKey(group), ticket = state.nextTicket++, dueDate = draft.serviceDueDates[key] || draft.serviceDueDates[service] || v8DefaultDue(service);
     group.items.forEach(v17StampFlatLine);
-    const subtotal = v8ServiceSubtotal(group.items), surcharge = draft.payNow && draft.paymentMethod === 'card' ? v17Round(subtotal * 0.03) : 0, pieceCount = v8PieceCount(group.items, service), rush = (draft.rushGroups || []).includes(key);
+    const subtotal = v8ServiceSubtotal(group.items), surcharge = !window.hcPricing && draft.payNow && draft.paymentMethod === 'card' ? v17Round(subtotal * 0.03) : 0, pieceCount = v8PieceCount(group.items, service), rush = (draft.rushGroups || []).includes(key);
     const instruction = v14InstructionText(service), notes = [rush ? 'RUSH — SAME DAY' : '', instruction, String(draft.notes || '').trim()].filter(Boolean).join(' · '), needsTag = v17RequiresTag(service);
     const dueTime = rush ? v17FormatClock(draft.serviceDueTimes[key] || state.workflowSettings.rushReadyTime) : '04:00 PM';
     const order = {

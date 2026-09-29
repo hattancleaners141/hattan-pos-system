@@ -79,7 +79,7 @@
   }
   function wrapComplete() {
     const cur = window.posCompleteDropOff;
-    if (typeof cur !== 'function' || cur.__v299) return;
+    if (typeof cur !== 'function' || (cur.__hcTags && cur.__hcTags.has('v299'))) return;
     const w = function () {
       const before = new Set((state.orders || []).map(o => o.id));
       const draftLines = (counterDraft && counterDraft.items || []).slice();
@@ -103,7 +103,7 @@
       if (made.length && typeof saveState === 'function') saveState();
       return res;
     };
-    w.__v299 = true; window.posCompleteDropOff = w; try { posCompleteDropOff = w; } catch (_) {}
+    w.__v299 = true; w.__hcTags = new Set([...(cur.__hcTags || []), 'v299']); window.posCompleteDropOff = w; try { posCompleteDropOff = w; } catch (_) {}
   }
 
   /* ---------- labels ---------- */

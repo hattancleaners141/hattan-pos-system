@@ -19,7 +19,7 @@
 
   const nyDay = d => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); };
   const today = () => nyDay(Date.now());
-  const base = o => Math.max(0, Number(o.total || 0) - Number(o.discount || 0));
+  const base = o => Math.max(0, Math.round((Number(o.total || 0) - Number(o.discount || 0) - Number(o.storeCreditApplied || 0)) * 100) / 100);
   const fee = o => (window.hcPricing ? hcPricing.cardFee(o, base(o)) : Math.round(base(o) * 0.03 * 100) / 100);
   const cardFor = c => (typeof v2CardForCustomer === 'function' ? v2CardForCustomer(c) : null);
   const isManager = () => (typeof v6IsManager === 'function' ? v6IsManager() : true);
@@ -108,7 +108,7 @@
     if (!live() && !confirm(`Demo mode: Clover is not connected, so these ${sel.length} tickets will only be marked paid in the POS — no card is charged. Continue?`)) return;
     running = true;
     sel.forEach(o => { delete o.paymentError; });
-    try { await v2ChargeAll(); }
+    try { if (live() && typeof window.hcPushAndWait === 'function') await hcPushAndWait(); await v2ChargeAll(); }
     finally {
       running = false;
       const charged = sel.filter(o => o.paid).length, failed = sel.filter(o => !o.paid && o.paymentError).length;
