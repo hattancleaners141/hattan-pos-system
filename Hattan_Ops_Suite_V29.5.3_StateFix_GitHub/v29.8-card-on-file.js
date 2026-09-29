@@ -11,6 +11,36 @@
   const cardOf = c => (c && c.paymentMethods || []).find(p => p.processor === 'clover') || (c && c.paymentMethods || []).find(p => p.default) || (c && c.paymentMethods || [])[0] || null;
   const openCard = id => { if (typeof v8OpenAddCard === 'function') v8OpenAddCard(id); else if (typeof toast === 'function') toast('Card setup is not available', false, 'alerttriangle'); };
   window.v298AddCard = openCard;
+  // Clover requires an email to save a card. When the customer has none, use a per-customer
+  // Gmail "+" alias of the shop inbox (delivers to hattancleaners141@gmail.com). It is kept
+  // off the customer's profile and never used for receipts.
+  const PLACEHOLDER_BASE = ['hattancleaners141', 'gmail.com'];
+  const isPlaceholder = e => new RegExp('^' + PLACEHOLDER_BASE[0] + '\\+c[^@]+@' + PLACEHOLDER_BASE[1].replace('.', '\\.') + '$', 'i').test(String(e || ''));
+  const placeholderFor = c => `${PLACEHOLDER_BASE[0]}+c${String((c && (c.customerNumber || c.id)) || Date.now()).replace(/[^A-Za-z0-9]/g, '')}@${PLACEHOLDER_BASE[1]}`;
+  window.v298IsPlaceholderEmail = isPlaceholder;
+  function fillCardEmail(c) {
+    const el = document.getElementById('v16-card-email'); if (!el || String(el.value || '').trim()) return;
+    el.value = c.cloverEmail || placeholderFor(c);
+    const label = el.previousElementSibling;
+    if (label) label.innerHTML = 'Email for Clover <small style="font-weight:400;color:#475467">— none on file, so the shop inbox is used. Replace it if the customer gives an email.</small>';
+  }
+  function wrapCardModal() {
+    const open = window.v8OpenAddCard;
+    if (typeof open === 'function' && !open.__v298) {
+      const o = function (id) { const r = open.apply(this, arguments); try { const c = customerById(id); if (c) setTimeout(() => fillCardEmail(c), 0); } catch (_) {} return r; };
+      o.__v298 = true; window.v8OpenAddCard = o; try { v8OpenAddCard = o; } catch (_) {}
+    }
+    const save = window.v16SaveCloverCard;
+    if (typeof save === 'function' && !save.__v298) {
+      const sv = async function (id) {
+        const c = customerById(id), before = c ? (c.email || '') : '';
+        const r = await save.apply(this, arguments);
+        if (c && isPlaceholder(c.email)) { c.cloverEmail = c.email; c.email = isPlaceholder(before) ? '' : before; if (typeof saveState === 'function') saveState(); if (state.v7CustomerId === c.id && typeof renderV7CustomerProfile === 'function') renderV7CustomerProfile(); }
+        return r;
+      };
+      sv.__v298 = true; window.v16SaveCloverCard = sv; try { v16SaveCloverCard = sv; } catch (_) {}
+    }
+  }
 
   const css = document.createElement('style');
   css.textContent = `.v298-card{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:2px solid #1f6f43;border-radius:14px;padding:12px 16px;margin:12px 0;background:#f3faf5}
@@ -55,7 +85,7 @@
         try {
           const modal = document.querySelector('#nc-name')?.closest('.pos-modal, .modal, [class*="modal"]') || document.body;
           const oldRow = document.getElementById('nc-card-switch')?.closest('.pref-row') || [...modal.querySelectorAll('.pref-row')].find(x => /card on file/i.test(x.textContent));
-          const html = `<label class="v298-nc"><input type="checkbox" id="v298-nc-card" onchange="v298NcToggle(this.checked)"><span><strong>Add a card on file</strong><small style="display:block;color:#475467">After you tap Add Customer, Clover's secure card form opens. Email is required by Clover.</small></span></label>`;
+          const html = `<label class="v298-nc"><input type="checkbox" id="v298-nc-card" onchange="v298NcToggle(this.checked)"><span><strong>Add a card on file</strong><small style="display:block;color:#475467">After you tap Add Customer, Clover's secure card form opens. Phone number is enough — no email needed.</small></span></label>`;
           if (oldRow) oldRow.outerHTML = html;
           else { const btn = [...modal.querySelectorAll('button')].find(b => /Add Customer/i.test(b.textContent)); if (btn) btn.insertAdjacentHTML('beforebegin', html); }
           document.getElementById('nc-card-fields')?.remove();
@@ -67,12 +97,6 @@
     if (typeof save === 'function' && !save.__v298) {
       const s = function () {
         const want = addAfterCreate || !!document.getElementById('v298-nc-card')?.checked;
-        const email = String(document.getElementById('nc-email')?.value || '').trim();
-        if (want && !/^\S+@\S+\.\S+$/.test(email)) {
-          if (typeof toast === 'function') toast('Enter an email — Clover requires one to save a card', false, 'alerttriangle');
-          document.getElementById('nc-email')?.focus();
-          return;
-        }
         const before = new Set((state.customers || []).map(c => c.id));
         const r = save.apply(this, arguments);
         const created = (state.customers || []).find(c => !before.has(c.id));
@@ -85,7 +109,7 @@
   }
   window.v298NcToggle = on => { addAfterCreate = !!on; };
 
-  const install = () => { wrapProfile(); wrapNewCustomer(); };
+  const install = () => { wrapProfile(); wrapNewCustomer(); wrapCardModal(); };
   install();
   let n = 0; const g = setInterval(() => { install(); if (++n > 100) clearInterval(g); }, 100);
 })();
