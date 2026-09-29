@@ -1,2 +1,8 @@
+# Customer data and server source are never served as public files.
+/legacy-v294/*  /index.html  404!
+/legacy-v296/*  /index.html  404!
+/current-customers.json  /index.html  404!
+/supabase/*  /index.html  404!
+/netlify/*  /index.html  404!
 /r/*  /.netlify/functions/receipt?t=:splat  200
 /*  /index.html  200

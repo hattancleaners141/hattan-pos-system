@@ -47,12 +47,28 @@
     D.rows.forEach(r => { D.byNum.set(r.num, r); if (r.legacyId != null) D.byLegacy.set(String(r.legacyId), r); });
     D.status = 'ready';
   }
+  // Customer data is served to signed-in staff only (legacy-data function). Before sign-in the
+  // request returns 401, so keep retrying quietly until a staff member signs in.
+  const secureUrl = f => `/.netlify/functions/legacy-data?f=${f}`;
+  window.v296LegacyFetch = async (f, staticPath) => {
+    const r = await fetch(secureUrl(f), { cache: 'no-cache', credentials: 'same-origin' });
+    if (r.ok) return r.json();
+    if (r.status === 404 && staticPath) { // local/demo copy without Netlify Functions
+      const s = await fetch(staticPath, { cache: 'no-cache' });
+      if (s.ok) return s.json();
+    }
+    const e = Error(r.status === 401 ? 'Staff sign-in required' : `customer data returned ${r.status}`); e.status = r.status; throw e;
+  };
+  let waitTimer = null;
   function load() {
     D.status = 'loading'; D.error = '';
-    fetch(DATA_URL, { cache: 'no-cache' })
-      .then(r => { if (!r.ok) throw Error(`customer directory file returned ${r.status}`); return r.json(); })
+    clearTimeout(waitTimer);
+    v296LegacyFetch('directory', DATA_URL)
       .then(build)
-      .catch(e => { D.status = 'error'; D.error = e.message || String(e); console.error('V29.6 directory:', e); })
+      .catch(e => {
+        if (e.status === 401) { D.status = 'loading'; waitTimer = setTimeout(load, 4000); return; }
+        D.status = 'error'; D.error = e.message || String(e); console.error('V29.6 directory:', e);
+      })
       .finally(() => { rerender(); try { if (state.posNav === 'counter') augmentCounter(); } catch (_) {} });
   }
   window.v296RetryDirectory = () => { load(); rerender(); };
@@ -218,9 +234,9 @@
   }
   async function loadTickets(c) {
     const cid = Number(c.legacyCustomerId); if (!Number.isFinite(cid)) return [];
-    const r = await fetch(`legacy-v294/tickets4y-${(cid & 15).toString(16)}.json`, { cache: 'force-cache' });
-    if (!r.ok) throw Error('ticket history ' + r.status);
-    const all = await r.json(); return all.filter(x => Number(x[0]) === cid).map(x => x[1]);
+    const h = (cid & 15).toString(16);
+    const all = await v296LegacyFetch(`tickets-${h}`, `legacy-v294/tickets4y-${h}.json`);
+    return all.filter(x => Number(x[0]) === cid).map(x => x[1]);
   }
   function asOrder(c, t) {
     const its = (t.items || []).map(i => `${i.q || 1} ${i.d}`).join(', ');

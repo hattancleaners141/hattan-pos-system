@@ -167,3 +167,7 @@
   [headers.values]
     Content-Type = "application/javascript; charset=UTF-8"
     Cache-Control = "no-cache, no-store, must-revalidate"
+
+# CleanBase customer data is bundled with this function and served to signed-in staff only.
+[functions."legacy-data"]
+  included_files = ["legacy-v296/customer-directory.json", "legacy-v294/tickets4y-*.json"]
