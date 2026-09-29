@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Hattan Cleaners</string>
+    <string name="title_activity_main">Hattan Cleaners</string>
+    <string name="package_name">com.hattancleaners.app</string>
+    <string name="custom_url_scheme">com.hattancleaners.app</string>
+</resources>

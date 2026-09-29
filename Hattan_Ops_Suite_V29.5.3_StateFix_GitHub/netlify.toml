@@ -171,3 +171,7 @@
 # CleanBase customer data is bundled with this function and served to signed-in staff only.
 [functions."legacy-data"]
   included_files = ["legacy-v296/customer-directory.json", "legacy-v294/tickets4y-*.json"]
+
+# The customer app checks new sign-ups against the CleanBase directory (server-side only).
+[functions."app-action"]
+  included_files = ["legacy-v296/customer-directory.json"]

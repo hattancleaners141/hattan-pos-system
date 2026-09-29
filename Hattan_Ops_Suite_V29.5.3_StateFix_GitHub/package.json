@@ -1,0 +1,8 @@
+{
+  "name": "hattan-ops-suite",
+  "private": true,
+  "description": "Hattan Cleaners POS + customer app (Netlify site and functions)",
+  "dependencies": {
+    "nodemailer": "^7.0.6"
+  }
+}

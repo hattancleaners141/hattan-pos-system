@@ -1,0 +1,16 @@
+{
+  "appId": "com.hattancleaners.app",
+  "appName": "Hattan Cleaners",
+  "webDir": "www",
+  "server": {
+    "url": "https://hattan-ops-suite.netlify.app/app/",
+    "allowNavigation": ["hattan-ops-suite.netlify.app", "checkout.clover.com", "hattancleaners.com"],
+    "errorPath": "offline.html"
+  },
+  "ios": { "contentInset": "never", "backgroundColor": "#123d2b" },
+  "android": { "backgroundColor": "#123d2b" },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#123d2b", "showSpinner": false },
+    "StatusBar": { "style": "DARK", "backgroundColor": "#123d2b", "overlaysWebView": true }
+  }
+}
