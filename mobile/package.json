@@ -1,0 +1,23 @@
+{
+  "name": "hattan-cleaners-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hattan Cleaners customer app — iOS and Android shells (Capacitor) around the web app at /app/",
+  "scripts": {
+    "sync": "cap sync",
+    "ios": "cap open ios",
+    "android": "cap open android",
+    "icons": "capacitor-assets generate --iconBackgroundColor '#f6f4ee' --splashBackgroundColor '#123d2b'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.0.0"
+  }
+}
