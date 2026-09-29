@@ -38,6 +38,7 @@
         street: a[ix.street] || '', apt: a[ix.apt] || '', city: a[ix.city] || 'New York', state: a[ix.state] || 'NY', zip: a[ix.zip] || '',
         phone: a[ix.phone] || '', joined: a[ix.joined] || '', lastActivity: a[ix.lastActivity] || '',
         tickets: a[ix.tickets] || 0, spend: a[ix.spend] || 0, type: a[ix.type] || '', onReport: !!a[ix.onReport],
+        ar: ix.arBalance != null ? Number(a[ix.arBalance] || 0) : 0,
       };
       r.t = Date.parse(r.lastActivity) || 0; r.j = Date.parse(r.joined) || 0;
       r.key = [last + first, first + last, r.num, r.street, r.apt].map(norm).join('|'); r.dig = r.phone + '|' + r.num;
@@ -52,7 +53,7 @@
       .then(r => { if (!r.ok) throw Error(`customer directory file returned ${r.status}`); return r.json(); })
       .then(build)
       .catch(e => { D.status = 'error'; D.error = e.message || String(e); console.error('V29.6 directory:', e); })
-      .finally(rerender);
+      .finally(() => { rerender(); try { if (state.posNav === 'counter') augmentCounter(); } catch (_) {} });
   }
   window.v296RetryDirectory = () => { load(); rerender(); };
 
@@ -130,7 +131,7 @@
       const addr = [r.street, r.apt ? '#' + r.apt : ''].filter(Boolean).join(' ');
       const id = r.pos ? `p:${r.pos.id}` : `n:${r.num}`;
       return `<tr class="clickable" onclick="v296OpenCustomer('${E(id)}')">
-        <td><strong>${E(r.name || `Customer #${r.num}`)}</strong><div class="row-sub">Customer ${E(r.num || '—')}${r.pos && !r.legacy ? ' · new in POS' : ''}${!r.name ? ' · name not migrated yet' : ''}</div></td>
+        <td><strong>${E(r.name || `Customer #${r.num}`)}</strong><div class="row-sub">Customer ${E(r.num || '—')}${r.pos && !r.legacy ? ' · new in POS' : ''}${!r.name ? ' · name not migrated yet' : ''}${r.legacy && r.legacy.ar > 0.004 ? ` · <span style="color:#b42318">CleanBase balance ${money(r.legacy.ar)}</span>` : ''}</div></td>
         <td>${E(fmtPhone(r.phone) || '—')}</td>
         <td>${E(addr || '—')}</td>
         <td>${r.t ? new Date(r.t).toLocaleDateString() : '—'}</td>
@@ -223,31 +224,117 @@
   }
   function asOrder(c, t) {
     const its = (t.items || []).map(i => `${i.q || 1} ${i.d}`).join(', ');
+    // CleanBase leaves `paid` off for most tickets paid at pickup; real money owed lives in the
+    // customer's CleanBase account balance (added below as a balance-forward line). So a
+    // completed CleanBase ticket is treated as settled; only still-open tickets can be due.
+    const done = !!t.done, paid = !!t.paid || done;
     return { id: `legacy_${t.w}`, ticket: t.ticket, customerId: c.id, channel: 'counter', createdAt: t.c, dueDate: t.due ? String(t.due).slice(0, 10) : '',
-      status: t.done ? 'picked_up' : 'ready', stageIndex: 0, total: Number(t.total || 0), discount: 0, surcharge: 0, paid: !!t.paid,
-      paymentMethod: t.paid ? 'legacy payment' : '', items: its || `${t.qty || 0} item(s)`, rack: '', tagNumber: '', fulfillment: 'pickup',
+      status: done ? 'picked_up' : 'ready', stageIndex: 0, total: Number(t.total || 0), discount: 0, surcharge: 0, paid,
+      paymentMethod: t.paid ? 'CleanBase payment' : (done ? 'Settled in CleanBase' : ''), items: its || `${t.qty || 0} item(s)`, rack: '', tagNumber: '', fulfillment: 'pickup',
       legacy: true, legacyItems: t.items || [], __v294Loaded: true };
+  }
+  function balanceForward(c, r) {
+    if (!(r.ar > 0.004)) return null;
+    const asOf = (D.meta && D.meta.arAsOf) || '';
+    return { id: `legacy_bf_${r.legacyId || r.num}`, ticket: 'BAL FWD', customerId: c.id, channel: 'counter', createdAt: asOf ? asOf + 'T00:00:00' : '',
+      dueDate: asOf, status: 'picked_up', stageIndex: 0, total: r.ar, discount: 0, surcharge: 0, paid: false, paymentMethod: '',
+      items: `CleanBase account balance brought forward${asOf ? ' (as of ' + new Date(asOf + 'T12:00:00').toLocaleDateString() + ')' : ''}`,
+      rack: '', tagNumber: '', fulfillment: 'pickup', legacy: true, legacyBalanceForward: true, legacyItems: [], __v294Loaded: true };
+  }
+  const sig = o => `${!!o.paid}|${o.status}|${Number(o.total || 0)}|${Number(o.discount || 0)}|${o.paymentMethod || ''}`;
+  // Replace the currently-loaded CleanBase ticket history with this customer's, but never drop a
+  // CleanBase ticket (or balance-forward line) that staff have changed — e.g. took payment on.
+  function installLegacyOrders(c, fresh) {
+    const kept = (state.orders || []).filter(o => !o.__v294Loaded || (o.__v296Sig && sig(o) !== o.__v296Sig));
+    const keptIds = new Set(kept.map(o => o.id));
+    fresh.forEach(o => { o.__v296Sig = sig(o); });
+    state.orders = kept.concat(fresh.filter(o => !keptIds.has(o.id)));
+  }
+  function applyCredit(c, r) {
+    if (r.ar < -0.004 && !c.v296CreditApplied) {
+      c.storeCredit = Math.round((Number(c.storeCredit || 0) + (-r.ar)) * 100) / 100;
+      c.v296CreditApplied = true;
+    }
   }
   window.v296OpenCustomer = async function (ref) {
     let c;
     if (ref.startsWith('p:')) c = (state.customers || []).find(x => x.id === ref.slice(2));
     else { const r = D.byNum.get(ref.slice(2)); if (r) c = materialize(r); }
     if (!c) return;
-    if (c.legacyCustomerId != null) {
-      try {
-        const ts = await loadTickets(c);
-        state.orders = (state.orders || []).filter(o => !o.__v294Loaded);
-        state.orders.push(...ts.map(t => asOrder(c, t)));
-      } catch (e) { console.error(e); if (typeof toast === 'function') toast('Legacy ticket history could not load', false, 'alerttriangle'); }
-    }
+    await loadLegacy(c);
     if (typeof saveState === 'function') saveState();
     if (typeof v7OpenCustomerProfile === 'function') v7OpenCustomerProfile(c.id);
   };
+  async function loadLegacy(c) {
+    const r = (c.legacyCustomerId != null && D.byLegacy.get(String(c.legacyCustomerId))) || (c.customerNumber && D.byNum.get(String(c.customerNumber)));
+    if (!r) return;
+    let ts = [];
+    if (c.legacyCustomerId != null) {
+      try { ts = await loadTickets(c); }
+      catch (e) { console.error(e); if (typeof toast === 'function') toast('Legacy ticket history could not load', false, 'alerttriangle'); }
+    }
+    const fresh = ts.map(t => asOrder(c, t)); const bf = balanceForward(c, r); if (bf) fresh.push(bf);
+    installLegacyOrders(c, fresh); applyCredit(c, r);
+  }
   window.v294OpenCustomer = id => window.v296OpenCustomer('p:' + id);
+
+  /* ---------- Drop Off counter search: include the CleanBase directory ---------- */
+  function counterMatches(q, exclude) {
+    if (D.status !== 'ready' || !q) return [];
+    const nq = norm(q), qd = digits(q), words = q.toLowerCase().split(/[\s,]+/).map(norm).filter(Boolean);
+    const out = [];
+    for (const r of D.rows) {
+      if (exclude.has(r.num)) continue;
+      if ((nq && r.key.includes(nq)) || (words.length > 1 && words.every(w => r.key.includes(w))) || (qd.length >= 3 && r.dig.includes(qd))) out.push(r);
+    }
+    out.sort((a, b) => (b.name ? 1 : 0) - (a.name ? 1 : 0) || b.t - a.t);
+    return out.slice(0, 8);
+  }
+  window.v296CounterPick = function (num) {
+    const r = D.byNum.get(String(num)); if (!r) return;
+    const c = materialize(r);
+    loadLegacy(c).finally(() => { if (typeof saveState === 'function') saveState(); if (typeof window.v282Pick === 'function') window.v282Pick(c.id); else if (typeof posPickCustomer === 'function') { posPickCustomer(c.id); renderPosContent(); } });
+  };
+  function augmentCounter() {
+    const box = document.querySelector('#pos-content .v282-results'); const input = document.getElementById('v282search');
+    if (!box || !input) return;
+    const q = String(typeof posCustomerSearch !== 'undefined' ? posCustomerSearch : input.value || '').trim();
+    box.querySelectorAll('.v296-dir-result').forEach(x => x.remove());
+    if (!q) return;
+    const inPos = new Set((state.customers || []).map(c => String(c.customerNumber || '')).filter(Boolean));
+    const ms = counterMatches(q, inPos);
+    box.insertAdjacentHTML('beforeend', ms.map(r => `<div class="v282-result v296-dir-result" onclick="v296CounterPick('${E(r.num)}')">${E(r.name || 'Customer #' + r.num)}<small style="display:block">${E(fmtPhone(r.phone) || '')} · ${E([r.street, r.apt ? '#' + r.apt : ''].filter(Boolean).join(' ') || 'Customer ' + r.num)} · CleanBase #${E(r.num)}${r.ar > 0.004 ? ' · owes ' + E(money(r.ar)) : ''}</small></div>`).join(''));
+  }
+  let counterWrapped = null;
+  function wrapCounter() {
+    const cur = window.renderPosCounter;
+    if (typeof cur !== 'function' || cur === counterWrapped) return;
+    counterWrapped = function (content) { const res = cur.apply(this, arguments); try { augmentCounter(); } catch (e) { console.error('V29.6 counter search:', e); } return res; };
+    window.renderPosCounter = counterWrapped;
+    try { renderPosCounter = counterWrapped; } catch (_) {}
+  }
+  let keyWrapped = null;
+  function wrapSearchKey() {
+    const cur = window.v282SearchKey;
+    if (typeof cur !== 'function' || cur === keyWrapped) return;
+    keyWrapped = function (e) {
+      const before = counterDraft && counterDraft.customerId; cur.apply(this, arguments);
+      if (e.key !== 'Enter' || (counterDraft && counterDraft.customerId !== before)) return;
+      const q = String(posCustomerSearch || '').trim(); if (!q) return;
+      const ql = q.toLowerCase();
+      const posHits = (state.customers || []).filter(c => [c.name, c.phone, c.address, c.customerNumber].some(x => String(x || '').toLowerCase().includes(ql)));
+      if (posHits.length) return;
+      const inPos = new Set((state.customers || []).map(c => String(c.customerNumber || '')).filter(Boolean));
+      const ms = counterMatches(q, inPos);
+      if (ms.length === 1) { e.preventDefault(); window.v296CounterPick(ms[0].num); }
+    };
+    window.v282SearchKey = keyWrapped;
+  }
 
   /* ---------- install ---------- */
   function install() {
     window.renderPosCustomers = renderDirectory;
+    wrapCounter(); wrapSearchKey();
     window.HATTAN_V2953_LOAD_ERROR = null;
   }
   install();
@@ -255,6 +342,7 @@
   let ticks = 0;
   const guard = setInterval(() => {
     if (window.renderPosCustomers !== renderDirectory) { install(); rerender(); }
+    if (window.renderPosCounter !== counterWrapped || window.v282SearchKey !== keyWrapped) { wrapCounter(); wrapSearchKey(); }
     if (window.posCustDirSearch !== window.v296Search) window.posCustDirSearch = window.v296Search;
     if (++ticks % 10 === 0) pruneLegacyPlaceholders();
     if (ticks > 600) clearInterval(guard); // 60 s
