@@ -3708,8 +3708,9 @@ function renderCheckoutModal(orderId) {
   const baseDue = Math.max(0, afterReward - creditApplied);
   const isCard = checkoutState.method === 'card' || checkoutState.method.startsWith('card:');
   const surchargeRate = 0.03;
-  const surcharge = isCard ? Math.round(baseDue * surchargeRate * 100) / 100 : 0;
-  const due = baseDue + surcharge;
+  const surcharge = isCard ? (window.hcPricing ? hcPricing.cardFee(o, baseDue) : Math.round(baseDue * surchargeRate * 100) / 100) : 0;
+  const cashDisc = !isCard && window.hcPricing ? hcPricing.cashDiscount(o, baseDue) : 0;
+  const due = baseDue + surcharge - cashDisc;
   const change = checkoutState.method === 'cash' ? Math.max(0, checkoutState.cashTendered - due) : 0;
 
   openPosModal(`
@@ -3719,7 +3720,7 @@ function renderCheckoutModal(orderId) {
       <div class="receipt-row"><span>${esc(o.items)}</span><span>${money(o.total)}</span></div>
       ${discount ? `<div class="receipt-row"><span>Reward: ${reward.title}</span><span>−${money(discount)}</span></div>` : ''}
       ${creditApplied ? `<div class="receipt-row"><span>Store credit applied</span><span>−${money(creditApplied)}</span></div>` : ''}
-      ${surcharge ? `<div class="receipt-row"><span>Credit-card surcharge (3%)</span><span>+${money(surcharge)}</span></div>` : ''}
+      ${surcharge ? `<div class="receipt-row"><span>Card price adjustment (older ticket)</span><span>+${money(surcharge)}</span></div>` : ''}${cashDisc ? `<div class="receipt-row"><span>Cash discount (3%)</span><span>−${money(cashDisc)}</span></div>` : ''}
       <div class="receipt-row total"><span>${isCard ? 'Credit Card Total' : 'Amount Due'}</span><span>${money(due)}</span></div>
     </div>
 
@@ -3772,11 +3773,12 @@ function posFinishCheckout(orderId) {
   const totalDiscount = rewardDiscount + creditApplied;
   const baseDue = Math.max(0, afterReward - creditApplied);
   const isCard = checkoutState.method === 'card' || checkoutState.method.startsWith('card:');
-  const surcharge = isCard ? Math.round(baseDue * 0.03 * 100) / 100 : 0;
+  const surcharge = isCard ? (window.hcPricing ? hcPricing.cardFee(o, baseDue) : Math.round(baseDue * 0.03 * 100) / 100) : 0;
   o.discount = totalDiscount;
   o.surcharge = surcharge;
   o.amountCharged = baseDue + surcharge;
   o.paymentMethod = baseDue <= 0.004 ? 'store credit' : (checkoutState.method.startsWith('card:') ? 'card on file' : checkoutState.method);
+  if (window.hcPricing && hcPricing.cardPriced(o)) { o.paid = true; hcPricing.applyPayment(o, isCard ? 'card' : checkoutState.method); }
   finalizePayment(o);
   const stages = getStages(o); o.stageIndex = stages.length - 1; o.status = stages[o.stageIndex].id;
   recordSync(`Payment collected · ${o.channel === 'counter' ? '#' + o.ticket : o.id}`);
@@ -4257,7 +4259,7 @@ function renderPosPayments(content) {
       </div>
       <table class="pos-table"><thead><tr><th>Customer</th><th>Order</th><th>Base</th><th>Card</th><th>Card Total</th><th>Status</th></tr></thead>
       <tbody>${unpaidToday.map(o => {
-        const c=o.customerId?customerById(o.customerId):null, card=v2CardForCustomer(c), amt=Math.max(0,o.total-(o.discount||0)), total=amt+(card?Math.round(amt*.03*100)/100:0);
+        const c=o.customerId?customerById(o.customerId):null, card=v2CardForCustomer(c), amt=Math.max(0,o.total-(o.discount||0)), total=amt+(card?(window.hcPricing?hcPricing.cardFee(o,amt):Math.round(amt*.03*100)/100):0);
         return `<tr><td><strong>${esc(customerLabel(o))}</strong></td><td>${o.channel==='counter'?'#'+o.ticket:o.id}</td><td>${money(amt)}</td>
         <td>${card?`${card.brand} •••• ${card.last4}`:'—'}</td><td>${card?money(total):'—'}</td>
         <td><span class="v2-badge ${card?'good':'warn'}">${card?'Ready':'Needs payment method'}</span></td></tr>`}).join('')}</tbody></table>
@@ -4350,7 +4352,7 @@ function v2ChargeAll() {
   let charged=0;
   eligible.forEach(o => {
     const c=customerById(o.customerId), card=v2CardForCustomer(c);
-    const base=Math.max(0,o.total-(o.discount||0)), fee=Math.round(base*.03*100)/100;
+    const base=Math.max(0,o.total-(o.discount||0)), fee=window.hcPricing?hcPricing.cardFee(o,base):Math.round(base*.03*100)/100;
     o.surcharge=fee; o.amountCharged=base+fee; o.paymentMethod=`card on file •${card.last4}`; o.paid=true;
     if (!o.pointsAwarded && c) { c.points += Math.round(base); o.pointsAwarded=true; }
     recordSync(`Autopay charged · ${o.id} · ${money(o.amountCharged)} · ${card.brand} •${card.last4}`);
@@ -4723,5 +4725,6 @@ document.addEventListener('DOMContentLoaded', () => {
   <script src="v29.6-customer-directory.js?v=296"></script>
   <script src="v29.7-batch-card-charge.js?v=297"></script>
   <script src="v29.8-card-on-file.js?v=298"></script>
+  <script src="v29.9-cash-discount.js?v=299"></script>
 </body>
 </html>

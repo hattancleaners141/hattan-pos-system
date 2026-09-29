@@ -617,9 +617,10 @@ v2ChargeAll = async function v16ChargeAll() {
   if (!v16IsShared() || !v16CloverReady()) return v16BaseChargeAll();
   const eligible = v2EligibleAutopayOrders(); if (!eligible.length) return;
   const environment = v16Live.config.clover.environment;
+  const feeFor = (order, base) => window.hcPricing ? hcPricing.cardFee(order, base) : Math.round(base * .03 * 100) / 100;
   const total = eligible.reduce((sum, order) => {
     const base = Math.max(0, Number(order.total || 0) - Number(order.discount || 0));
-    return sum + base + Math.round(base * .03 * 100) / 100;
+    return sum + base + feeFor(order, base);
   }, 0);
   if (!confirm(`${environment === 'production' ? 'LIVE CHARGE' : 'SANDBOX TEST'}: charge ${eligible.length} card${eligible.length === 1 ? '' : 's'} for ${money(total)}?`)) return;
   eligible.forEach(order => { order.cloverIdempotencyKey = order.cloverIdempotencyKey || crypto.randomUUID(); });
@@ -629,7 +630,7 @@ v2ChargeAll = async function v16ChargeAll() {
   for (const order of eligible) {
     const customer = customerById(order.customerId), card = v2CardForCustomer(customer);
     const base = Math.max(0, Number(order.total || 0) - Number(order.discount || 0));
-    const fee = Math.round(base * .03 * 100) / 100, amount = Math.round((base + fee) * 100) / 100;
+    const fee = feeFor(order, base), amount = Math.round((base + fee) * 100) / 100;
     const idempotencyKey = order.cloverIdempotencyKey;
     const response = await v16Api('clover-charge', { method:'POST', body:JSON.stringify({
       orderId:order.id, ticket:order.ticket || order.id, customerId:customer.id,

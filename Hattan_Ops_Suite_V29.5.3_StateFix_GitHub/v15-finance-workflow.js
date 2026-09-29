@@ -322,10 +322,17 @@ function v15ApplyTicketEdit(orderId, draft) {
   const previousPaid = v15PaidAmount(order), before = { total:order.total, gross:v15GrossTotal(order), dueDate:order.dueDate, rush:!!order.rush, lineCount:(order.lineItems || []).length, summary:order.items || '' };
   order.lineItems = lines.map(({ _editId, ...line }) => line); order.itemsDetail = order.lineItems.map(line => ({ ...line }));
   order.total = v15EditorTotal({ lineItems:lines }); order.subtotal = order.total;
+  if (window.hcPricing && hcPricing.cardPriced(order)) {
+    // Editor prices are the cash price list; the ticket keeps its card price (cash ÷ 0.97 per line).
+    [order.lineItems, order.itemsDetail].forEach(list => (list || []).forEach(line => { line.cardPrice = true; }));
+    order.cashPrice = order.total;
+    order.total = v15RoundMoney(lines.reduce((sum, line) => sum + hcPricing.cardFromCash(Number(line.qty || 0) * Number(line.unitPrice || 0)), 0));
+    order.subtotal = order.total;
+  }
   order.serviceType = lines[0].serviceType || v8ServiceForItem(lines[0]); order.services = [...new Set(lines.map(line => line.serviceType || v8ServiceForItem(line)))];
   order.pieceCount = Math.max(1, Math.round(lines.reduce((sum, line) => sum + Number(line.qty || 0), 0)));
   order.items = v15LineSummary(lines); order.notes = String(draft.notes || '').trim(); order.dueDate = draft.dueDate; order.rush = !!draft.rush; order.dueTime = draft.rush ? 'AS SOON AS POSSIBLE' : (order.dueTime === 'AS SOON AS POSSIBLE' ? '04:00 PM' : order.dueTime || '04:00 PM');
-  if (Number(order.surcharge || 0) > 0 && /card/i.test(String(order.paymentMethod || ''))) order.surcharge = v15RoundMoney(Math.max(0, order.total - Number(order.discount || 0)) * 0.03);
+  if (Number(order.surcharge || 0) > 0 && /card/i.test(String(order.paymentMethod || ''))) order.surcharge = window.hcPricing ? hcPricing.cardFee(order, Math.max(0, order.total - Number(order.discount || 0))) : v15RoundMoney(Math.max(0, order.total - Number(order.discount || 0)) * 0.03);
   if (previousPaid > 0) order.amountPaid = previousPaid;
   const balance = v15OrderBalance(order); order.paid = previousPaid > 0 && balance <= 0.004;
   if (balance > 0.004 && previousPaid > 0) order.paymentStatus = 'balance_due_after_edit';

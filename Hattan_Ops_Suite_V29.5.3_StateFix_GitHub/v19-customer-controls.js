@@ -279,7 +279,7 @@ function v19DraftPaymentPreview(customer) {
   const subtotal = v19DraftSubtotal();
   const credit = counterDraft?.payNow && counterDraft?.useStoreCredit && customer ? Math.min(Number(customer.storeCredit || 0), subtotal) : 0;
   const externalBase = Math.max(0, subtotal - credit);
-  const fee = counterDraft?.payNow && counterDraft?.paymentMethod === 'card' ? v19Round(externalBase * 0.03) : 0;
+  const fee = !window.hcPricing && counterDraft?.payNow && counterDraft?.paymentMethod === 'card' ? v19Round(externalBase * 0.03) : 0;
   return { subtotal, credit:v19Round(credit), externalBase:v19Round(externalBase), fee, externalDue:v19Round(externalBase + fee), visitTotal:v19Round(subtotal + fee) };
 }
 function v19SetDraftStoreCredit(useCredit) {
@@ -320,7 +320,7 @@ finalizePayment = function v19FinalizePayment(order) {
   }
   const externalBase = Math.max(0, v19Round(subtotal - credit));
   const card = /card/i.test(originalMethod);
-  const fee = card ? v19Round(externalBase * 0.03) : 0;
+  const fee = card ? (window.hcPricing ? hcPricing.cardFee(order, externalBase) : v19Round(externalBase * 0.03)) : 0;
   order.surcharge = fee;
   order.storeCreditApplied = v19Round(credit);
   order.externalPaymentAmount = v19Round(externalBase + fee);

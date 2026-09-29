@@ -383,7 +383,7 @@ function v8DraftDue(service) {
 }
 function v8SetDraftDue(service, value) { counterDraft.serviceDueDates[service] = value; renderPosContent(); }
 function v8DraftBaseTotal() { return (counterDraft?.items || []).reduce((s,it) => s + (Number(it.unitPrice)||0) * (Number(it.qty)||0), 0) + ((counterDraft?.tags || []).includes('rush') ? 10 : 0); }
-function v8DraftFee() { return counterDraft?.payNow && counterDraft.paymentMethod === 'card' ? Math.round(v8DraftBaseTotal() * .03 * 100) / 100 : 0; }
+function v8DraftFee() { if (window.hcPricing) return 0; return counterDraft?.payNow && counterDraft.paymentMethod === 'card' ? Math.round(v8DraftBaseTotal() * .03 * 100) / 100 : 0; }
 function v8ServiceSubtotal(items) { return items.reduce((s,it) => s + (Number(it.unitPrice)||0) * (Number(it.qty)||0), 0); }
 function v8DraftTagHTML(service, items) {
   return `<span class="v8-tag-chip v12-awaiting-tag">Tag assigned after intake</span>`;
@@ -976,7 +976,7 @@ function v11ReceiptItemHTML(it,service){
   const g=garmentById(it.garmentId),qty=Number(it.qty)||1,d=v8LinePrintDescription(it);
   const qtyText=service==='washfold'?`${qty} LB`:Number.isInteger(qty)?String(qty):String(qty);
   const itemName=String(g?.name||d.name||'SERVICE ITEM').replace(/\s*[×x]\s*[\d.]+$/i,'').toUpperCase();
-  const lineTotal=(Number(it.unitPrice)||0)*qty;
+  let lineTotal=(Number(it.unitPrice)||0)*qty; if(it.cardPrice&&window.hcPricing)lineTotal=hcPricing.cardFromCash(lineTotal);
   return `<div class="v11-item-line"><div class="rt-row"><strong>${esc(qtyText)} - ${esc(itemName)}</strong><strong>${money(lineTotal)}</strong></div>${d.detail?`<div class="v11-item-detail">${esc(d.detail.toUpperCase())}</div>`:''}</div>`;
 }
 receiptTicketHTML = function v8ReceiptTicketHTML(o){

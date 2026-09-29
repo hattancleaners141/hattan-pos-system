@@ -28,7 +28,7 @@ v19DraftPaymentPreview = function v22DraftPaymentPreview(customer) {
   if (!counterDraft?.payNow || !counterDraft?.useStoreCredit || !customer) return result;
   result.credit = v19Round(v22CreditAmount(customer));
   result.externalBase = v19Round(Math.max(0, result.subtotal - result.credit));
-  result.fee = counterDraft.paymentMethod === 'card' ? v19Round(result.externalBase * .03) : 0;
+  result.fee = !window.hcPricing && counterDraft.paymentMethod === 'card' ? v19Round(result.externalBase * .03) : 0;
   result.externalDue = v19Round(result.externalBase + result.fee);
   result.visitTotal = v19Round(result.subtotal + result.fee);
   return result;

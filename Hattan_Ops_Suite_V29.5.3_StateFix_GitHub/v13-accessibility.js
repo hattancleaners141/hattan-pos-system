@@ -644,8 +644,9 @@ function v13PayReset() { v13PayOrderId = null; renderPosContent(); }
 function v13SimplePay(orderId, method) {
   const o = state.orders.find((x) => x.id === orderId); if (!o || o.paid) return;
   const base = Math.max(0, (o.total || 0) - (o.discount || 0));
-  if (method === 'card') { o.surcharge = Math.round(base * 0.03 * 100) / 100; o.amountCharged = base + o.surcharge; }
+  if (method === 'card') { o.surcharge = window.hcPricing ? hcPricing.cardFee(o, base) : Math.round(base * 0.03 * 100) / 100; o.amountCharged = base + o.surcharge; }
   o.paid = true; o.paymentMethod = method; o.paidAt = v8NowISO();
+  if (window.hcPricing && hcPricing.cardPriced(o)) hcPricing.applyPayment(o, method);
   if (o.customerId && !o.pointsAwarded) { const cust = customerById(o.customerId); if (cust) { cust.points += Math.round(base); o.pointsAwarded = true; } }
   v8AddActivity(o, 'payment', `Payment recorded · ${money(base + (o.surcharge || 0))}`);
   recordSync(`Balance marked paid · ${o.id} · ${method}`);

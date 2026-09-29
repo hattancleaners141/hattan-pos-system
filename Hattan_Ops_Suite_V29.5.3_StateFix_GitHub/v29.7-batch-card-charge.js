@@ -20,7 +20,7 @@
   const nyDay = d => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); };
   const today = () => nyDay(Date.now());
   const base = o => Math.max(0, Number(o.total || 0) - Number(o.discount || 0));
-  const fee = o => Math.round(base(o) * 0.03 * 100) / 100;
+  const fee = o => (window.hcPricing ? hcPricing.cardFee(o, base(o)) : Math.round(base(o) * 0.03 * 100) / 100);
   const cardFor = c => (typeof v2CardForCustomer === 'function' ? v2CardForCustomer(c) : null);
   const isManager = () => (typeof v6IsManager === 'function' ? v6IsManager() : true);
   const env = () => { try { return (window.v16Live && v16Live.config && v16Live.config.clover && v16Live.config.clover.environment) || ''; } catch (_) { return ''; } };
@@ -61,14 +61,14 @@
           const old = Date.parse(o.createdAt) < oldCut;
           return `<tr><td style="width:36px"><input type="checkbox" ${B.skip.has(o.id) ? '' : 'checked'} onchange="v297Toggle('${E(o.id)}',this.checked)"></td>
           <td>#${E(o.ticket || o.id)}</td><td>${E(new Date(o.createdAt).toLocaleDateString())}${old ? ` <span style="color:#b42318;font-weight:600">· ${Math.floor((Date.now() - Date.parse(o.createdAt)) / 864e5)} days old</span>` : ''}</td>
-          <td>${E(String(o.items || '').slice(0, 60))}</td><td style="text-align:right">${money(base(o))} + ${money(fee(o))} fee</td><td style="text-align:right">${money(base(o) + fee(o))}</td></tr>`;
+          <td>${E(String(o.items || '').slice(0, 60))}</td><td style="text-align:right">${money(base(o))}${fee(o) > 0.004 ? ` + ${money(fee(o))} (old ticket)` : ''}</td><td style="text-align:right">${money(base(o) + fee(o))}</td></tr>`;
         }).join('');
     }).join('');
     const last = B.lastRun ? `<div class="helper-text" style="margin-top:8px">Last run ${E(new Date(B.lastRun.at).toLocaleTimeString())}: ${B.lastRun.charged} charged${B.lastRun.failed ? `, <strong style="color:#b42318">${B.lastRun.failed} declined/failed</strong>` : ''}.</div>` : '';
     return `<div class="pos-card v297-batch" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Batch charge cards on file</h3>${tag}<span style="flex:1"></span>
         ${btn(B.mode === 'today', 'today', `Today (${candidates('today').length})`)}${btn(B.mode === 'all', 'all', `All unpaid up to today (${candidates('all').length})`)}</div>
-      <div class="helper-text" style="margin:6px 0 10px">Unpaid tickets for customers with a Clover card on file${B.mode === 'today' ? ', written today' : ', written on or before today'}. Untick anything you don't want charged. Each ticket is charged separately (ticket + 3% card fee). Already-paid or already-charged tickets are never charged again.</div>
+      <div class="helper-text" style="margin:6px 0 10px">Unpaid tickets for customers with a Clover card on file${B.mode === 'today' ? ', written today' : ', written on or before today'}. Untick anything you don't want charged. Each ticket is charged separately at the ticket's card price. Already-paid or already-charged tickets are never charged again.</div>
       ${oldCount ? `<div class="warn-banner" style="margin-bottom:10px"><span><strong>${oldCount} ticket${oldCount === 1 ? ' is' : 's are'} over ${OLD_DAYS} days old.</strong> Make sure those customers expect this charge, or untick them.</span></div>` : ''}
       ${list.length ? `<div class="pos-table-wrap"><table class="pos-table"><thead><tr><th></th><th>Ticket</th><th>Written</th><th>Items</th><th style="text-align:right">Amount</th><th style="text-align:right">Charge</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="helper-text" style="padding:10px 0">${B.mode === 'today' ? 'No unpaid card-on-file tickets from today.' : 'No unpaid card-on-file tickets.'}</div>`}
       <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
