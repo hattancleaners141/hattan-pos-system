@@ -16,8 +16,10 @@ export const handler = async (event) => {
     if (!order) throw new HttpError(409, 'This ticket is not present in the latest shared store data');
     if (String(order.customerId || '') !== customerId) throw new HttpError(409, 'The ticket does not belong to the selected customer');
     if (order.paid === true || order.paymentStatus === 'paid') throw new HttpError(409, 'This ticket is already marked paid');
-    const base = Math.max(0, Number(order.total || 0) - Number(order.discount || 0));
-    const fee = Math.round(base * 0.03 * 100) / 100;
+    // Store credit applied at drop-off reduces what the card pays.
+    const base = Math.max(0, Math.round((Number(order.total || 0) - Number(order.discount || 0) - Number(order.storeCreditApplied || 0)) * 100) / 100);
+    // Tickets priced at the card price (V29.9+) are charged as shown; older tickets add 3%.
+    const fee = order.pricing === 'card-price-v299' ? 0 : Math.round(base * 0.03 * 100) / 100;
     const expectedAmount = Math.round((base + fee) * 100);
     if (!Number.isSafeInteger(expectedAmount) || expectedAmount !== amount) throw new HttpError(409, 'The charge amount no longer matches the latest ticket total');
     const idempotencyKey = String(body.idempotencyKey || randomId()).slice(0, 100);

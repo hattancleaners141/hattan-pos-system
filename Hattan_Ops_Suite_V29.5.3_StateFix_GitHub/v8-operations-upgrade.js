@@ -383,7 +383,7 @@ function v8DraftDue(service) {
 }
 function v8SetDraftDue(service, value) { counterDraft.serviceDueDates[service] = value; renderPosContent(); }
 function v8DraftBaseTotal() { return (counterDraft?.items || []).reduce((s,it) => s + (Number(it.unitPrice)||0) * (Number(it.qty)||0), 0) + ((counterDraft?.tags || []).includes('rush') ? 10 : 0); }
-function v8DraftFee() { return counterDraft?.payNow && counterDraft.paymentMethod === 'card' ? Math.round(v8DraftBaseTotal() * .03 * 100) / 100 : 0; }
+function v8DraftFee() { if (window.hcPricing) return 0; return counterDraft?.payNow && counterDraft.paymentMethod === 'card' ? Math.round(v8DraftBaseTotal() * .03 * 100) / 100 : 0; }
 function v8ServiceSubtotal(items) { return items.reduce((s,it) => s + (Number(it.unitPrice)||0) * (Number(it.qty)||0), 0); }
 function v8DraftTagHTML(service, items) {
   return `<span class="v8-tag-chip v12-awaiting-tag">Tag assigned after intake</span>`;
@@ -757,7 +757,7 @@ posCompleteDropOff = function v8CompleteDropOff() {
   if(d.fulfillment==='delivery' && (!customer || !customer.addresses?.length)) return toast('Return delivery requires a customer profile with an address',false,'alerttriangle');
   const batchId=uid('visit_'), created=[];
   groups.forEach(({service,items})=>{
-    const ticket=state.nextTicket++, dueDate=v8DraftDue(service), subtotal=v8ServiceSubtotal(items), surcharge=d.payNow&&d.paymentMethod==='card'?Math.round(subtotal*.03*100)/100:0;
+    const ticket=state.nextTicket++, dueDate=v8DraftDue(service), subtotal=v8ServiceSubtotal(items), surcharge=!window.hcPricing&&d.payNow&&d.paymentMethod==='card'?Math.round(subtotal*.03*100)/100:0;
     const pieceCount=v8PieceCount(items,service);
     const order={id:`HC-${ticket}`,ticket:String(ticket),barcode:v8MakeBarcode(ticket),channel:d.fulfillment==='delivery'?'delivery':'counter',fulfillment:d.fulfillment,customerId:d.customerId,customerName:d.customerId?null:(d.guestName.trim()||'Walk-in Guest'),address:d.fulfillment==='delivery'?customer.addresses[0].id:null,items:`${V8_SERVICE_NAMES[service]} · ${pieceCount}${service==='washfold'?' bag':' piece'+(pieceCount===1?'':'s')}`,services:[service],serviceType:service,total:subtotal,subtotal,surcharge,amountCharged:d.payNow?subtotal+surcharge:null,lineItems:items.map(it=>({...it})),itemsDetail:items.map(it=>({...it})),status:d.fulfillment==='delivery'?'in_cleaning':'dropped_off',stageIndex:d.fulfillment==='delivery'?2:0,rack:null,placedLabel:'Today',dateLabel:'Today',createdAt:v8NowISO(),dueDate,paid:false,paymentMethod:null,pointsAwarded:false,notes:d.notes,tags:d.tags.slice(),garmentPhotos:d.photos.slice(),deliveryPhotos:[],assignedDriverId:null,invoiced:false,intakeBatchId:batchId,pieceCount,tagNumber:null,tagNumbers:[],tagColor:null,tagColorHex:null,tagAssignedAt:null,register:state.session?.register||'Front Counter',createdBy:v6CurrentStaff()?.name||'Staff',activity:[]};
     if(d.payNow){order.paymentMethod=d.paymentMethod;finalizePayment(order);}
@@ -976,7 +976,7 @@ function v11ReceiptItemHTML(it,service){
   const g=garmentById(it.garmentId),qty=Number(it.qty)||1,d=v8LinePrintDescription(it);
   const qtyText=service==='washfold'?`${qty} LB`:Number.isInteger(qty)?String(qty):String(qty);
   const itemName=String(g?.name||d.name||'SERVICE ITEM').replace(/\s*[×x]\s*[\d.]+$/i,'').toUpperCase();
-  const lineTotal=(Number(it.unitPrice)||0)*qty;
+  let lineTotal=(Number(it.unitPrice)||0)*qty; if(it.cardPrice&&window.hcPricing)lineTotal=hcPricing.cardFromCash(lineTotal);
   return `<div class="v11-item-line"><div class="rt-row"><strong>${esc(qtyText)} - ${esc(itemName)}</strong><strong>${money(lineTotal)}</strong></div>${d.detail?`<div class="v11-item-detail">${esc(d.detail.toUpperCase())}</div>`:''}</div>`;
 }
 receiptTicketHTML = function v8ReceiptTicketHTML(o){
