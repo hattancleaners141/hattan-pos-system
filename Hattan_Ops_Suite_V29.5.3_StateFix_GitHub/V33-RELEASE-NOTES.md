@@ -18,3 +18,12 @@
 Sandbox (Clover test) is the default. After Clover approves the production app, set
 `CLOVER_DEVICE_ENVIRONMENT=production`, `CLOVER_APP_ID`, `CLOVER_RAID`, and the production
 `CLOVER_APP_SECRET`, redeploy, and connect again.
+
+## V33.1 — Save the card on file from the Flex
+- After a Flex payment, if the customer has no card on file, the POS offers **Save this card for
+  future charges?** Staff enter/confirm the email (Clover requires it), tick that the customer agrees,
+  and the customer taps the same card once more. The card is saved exactly like a card added at the
+  counter, so the daily batch charge and Pay Now can use it.
+- Two taps on purpose: the payment stays an in-person (card-present) charge.
+- Settings → Clover Flex shows whether Clover has "multi-pay tokens" enabled on the account
+  (needed for this). Only offered when the Flex and card-on-file use the same (live) Clover account.

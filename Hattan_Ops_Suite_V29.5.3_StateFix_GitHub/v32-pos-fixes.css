@@ -34,3 +34,5 @@
 .v33-tag{font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;color:#fff}
 .v33-tag.live{background:#b42318}.v33-tag.test{background:#b54708}
 .v33-flex-settings{margin-bottom:14px}
+.v33-save-offer{text-align:left;border:1px solid #cfe6da;background:#f3faf6;border-radius:12px;padding:12px;margin-top:10px}
+.v33-consent{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;margin:8px 0 10px}
