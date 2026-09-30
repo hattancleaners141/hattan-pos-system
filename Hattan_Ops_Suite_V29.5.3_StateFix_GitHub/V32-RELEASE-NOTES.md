@@ -28,3 +28,11 @@
 - After completing one apartment the app opens the next one in the same building.
 - Moving a stop up/down moves the whole building; Google Maps gets one waypoint per building.
 - Each apartment still gets its own photo + handoff record, so proof stays per customer.
+
+## V32.1 — Edit Entire Ticket: switch Pickup ↔ Delivery
+- The ticket editor has a "How the customer gets it back" choice (Customer Pickup / Delivery).
+- Delivery asks which of the customer's addresses to deliver to; it is blocked (with a clear message)
+  for walk-in guests or customers with no address on file.
+- Switching a delivery back to pickup takes it off the driver's route and the Scan for Delivery list;
+  an "Out for delivery" ticket goes back to Ready.
+- The change is written to the ticket's activity and edit history.

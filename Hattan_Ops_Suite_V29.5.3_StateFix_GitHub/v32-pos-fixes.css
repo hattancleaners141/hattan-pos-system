@@ -7,3 +7,9 @@
 /* V32 — steady sync pill (no header jump while saving) */
 .v16-sync-pill{min-width:118px;justify-content:center}
 .v16-sync-pill.v32-saving{background:rgba(12,163,12,.08);color:#2f6b3a}
+/* V32.1 — Edit Entire Ticket: Customer Pickup / Delivery */
+.v32-edit-fulfill{margin:0 0 16px;padding:14px;border-radius:12px;background:var(--surface-sunken,#f6f4ee)}
+.v32-fulfill-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.v32-fulfill-btns button{display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:10px;border:1.5px solid #d5dbd7;background:#fff;font-weight:800;font-size:14px;cursor:pointer;color:inherit}
+.v32-fulfill-btns button.sel{border-color:var(--brand,#163f36);background:var(--brand,#163f36);color:#fff;box-shadow:0 2px 6px rgba(22,63,54,.25)}
+.v32-fulfill-btns button.sel::after{content:" ✓"}
