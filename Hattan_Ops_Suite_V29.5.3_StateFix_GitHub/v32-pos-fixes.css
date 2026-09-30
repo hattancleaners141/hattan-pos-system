@@ -21,3 +21,16 @@
 /* V32.5 — batch charge on the Simple Pay screen */
 .v32-simple-batch{margin-top:18px}
 .v32-simple-batch .v297-batch button[onclick^="v297Run"]{font-size:17px;padding:14px 22px}
+/* V33 — Clover Flex */
+.v33-flex-body{text-align:center;padding:6px 0}
+.v33-flex-amount{font-size:40px;font-weight:900;letter-spacing:-.5px;margin:6px 0}
+.v33-flex-line{font-size:17px;font-weight:700;margin:12px 0 4px}
+.v33-flex-spinner{width:38px;height:38px;border:4px solid #d9e6df;border-top-color:var(--brand,#163f36);border-radius:50%;margin:10px auto;animation:v33spin 1s linear infinite}
+@keyframes v33spin{to{transform:rotate(360deg)}}
+.v33-flex-btns{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.v33-flex-good{font-size:20px;font-weight:800;color:#0a7a0a;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 0}
+.v33-flex-bad{font-size:16px;font-weight:700;color:#b42318;background:#fdecea;border-radius:10px;padding:10px 12px;margin:6px 0 10px}
+.v33-flex-btn{background:#0b3d2a !important}
+.v33-tag{font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;color:#fff}
+.v33-tag.live{background:#b42318}.v33-tag.test{background:#b54708}
+.v33-flex-settings{margin-bottom:14px}
