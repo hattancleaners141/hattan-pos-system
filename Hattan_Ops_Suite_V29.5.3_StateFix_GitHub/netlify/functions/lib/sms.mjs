@@ -143,9 +143,12 @@ export function compose(kind, ctx) {
     case 'pickup':
       msg = `Thanks for picking up ${ticketList(orders)}${hi}! See you next time.${link}`;
       break;
-    case 'delivered':
-      msg = `Your ${ticketList(orders)} ${orders.length === 1 ? 'was' : 'were'} delivered. Thank you${hi}!${link}`;
+    case 'delivered': {
+      const how = ctx.method ? ` (${String(ctx.method).toLowerCase()})` : '';
+      const t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
+      msg = `Your ${ticketList(orders)} ${orders.length === 1 ? 'was' : 'were'} delivered${how} at ${t}. Thank you${hi}!${links.length === 1 ? ` Delivery photo & receipt: ${links[0]}` : ''}`;
       break;
+    }
     case 'charged':
       msg = `Your card ending ${charge.last4} was charged ${usd(charge.amount)} for ${ticketList(orders)}.${link}`;
       break;

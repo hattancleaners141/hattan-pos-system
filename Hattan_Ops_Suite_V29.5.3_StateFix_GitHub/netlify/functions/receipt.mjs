@@ -1,6 +1,7 @@
 // GET /r/<token> — customer-facing receipt page linked from text messages.
 // The token is signed per ticket, so links can't be guessed or edited to see other tickets.
 import { loadStore, orderIdFromToken, SHOP, baseDue } from './lib/sms.mjs';
+import { proofPublic, proofsFor } from './lib/delivery.mjs';
 
 const E = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
@@ -83,5 +84,15 @@ export const handler = async (event) => {
   ${paid ? `<span class="badge paid">✓ Paid${method ? ' · ' + E(method) : ''}</span>`
     : `<span class="badge unpaid">Balance due at pickup</span>${newModel && due > 0 ? `<p class="note">Prices shown are card prices. Pay cash or check and save 3%: ${usd(due * ratio)}.</p>` : ''}`}
   </div>`;
-  return page(200, inner);
+  let proofHtml = '';
+  if (!sample && (o.deliveryProofId || o.pickupProofId || o.status === 'delivered')) {
+    try {
+      const proofs = (await proofsFor([o.id], { kinds: ['delivery', 'pickup'], seconds: 3600, limit: 3 })).map(proofPublic);
+      proofHtml = proofs.map(p => `<div class="card" style="margin-top:12px"><h1 style="font-size:18px">${p.kind === 'delivery' ? 'Delivered' : 'Picked up'}</h1>
+        <p class="sub">${E(new Date(p.at).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }))}${p.method ? ' · ' + E(p.method) : ''}${p.recipient ? ' · ' + E(p.recipient) : ''}${p.driver ? ' · by ' + E(p.driver) : ''}</p>
+        ${p.photos.map(u => `<a href="${E(u)}" target="_blank" rel="noopener"><img src="${E(u)}" alt="Delivery photo" style="width:100%;border-radius:12px;margin-top:8px;display:block"></a>`).join('')}
+        ${p.gps ? `<p class="note">Location recorded by the driver's phone (±${E(p.gps.accuracy ?? '?')} m).</p>` : ''}</div>`).join('');
+    } catch (e) { console.error('receipt proof', e.message); }
+  }
+  return page(200, inner + proofHtml);
 };
