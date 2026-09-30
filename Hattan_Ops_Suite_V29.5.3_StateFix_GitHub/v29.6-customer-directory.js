@@ -164,9 +164,17 @@
         ${btn(false, 'v296Page(-1)', '‹ Prev')}<span>Page ${ui.page + 1} of ${pages.toLocaleString()}</span>${btn(false, 'v296Page(1)', 'Next ›')}</div>` : '';
     content.innerHTML = `<div class="v296-customers">
       <div class="pos-card" style="margin-bottom:12px">
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <div class="pos-search" style="flex:1;min-width:280px"><span class="search-ic">⌕</span>
-            <input id="v296-search" placeholder="Search name, phone, customer #, address…" value="${E(state.posCustSearch || '')}" oninput="v296Search(this.value)" /></div>
+        <style>
+          .v296-customers .v296-bigsearch{display:flex;gap:12px;align-items:stretch;flex-wrap:wrap}
+          .v296-customers .v296-bigsearch .pos-search{flex:1 1 520px!important;max-width:none!important;width:auto!important;position:relative;margin:0!important}
+          .v296-customers .v296-bigsearch .search-ic{position:absolute;left:20px;top:50%;transform:translateY(-50%);font-size:28px;color:#565f57;pointer-events:none}
+          .v296-customers .v296-bigsearch input{width:100%!important;max-width:none!important;height:68px!important;font-size:23px!important;padding:0 20px 0 60px!important;border:2px solid #cfe3d7!important;border-radius:18px!important;background:#fff!important;box-sizing:border-box}
+          .v296-customers .v296-bigsearch input:focus{outline:none;border-color:#0e5c37!important;box-shadow:0 0 0 4px rgba(14,92,55,.12)}
+          .v296-customers .v296-bigsearch .btn{height:68px;font-size:17px;padding:0 24px;border-radius:18px}
+        </style>
+        <div class="v296-bigsearch">
+          <div class="pos-search"><span class="search-ic">⌕</span>
+            <input id="v296-search" type="search" autocomplete="off" placeholder="Search name, phone, customer #, address…" value="${E(state.posCustSearch || '')}" oninput="v296Search(this.value)" /></div>
           <button class="btn btn-secondary" onclick="posOpenNewCustomer()">+ New Customer</button>
         </div>
         <div class="v293-filter-row" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px">

@@ -147,7 +147,8 @@ export async function mutateStore(fn) {
 export const noWrite = value => ({ __noWrite: true, value });
 
 // ---------------------------------------------------------------- legacy (CleanBase) directory
-const here = path.dirname(fileURLToPath(import.meta.url));
+// Netlify bundles functions as CommonJS, where import.meta.url is empty — fall back safely.
+const here = (() => { try { return path.dirname(fileURLToPath(import.meta.url)); } catch (_) { return typeof __dirname !== 'undefined' ? __dirname : process.cwd(); } })();
 let dirCache = null;
 export function legacyDirectory() {
   if (dirCache) return dirCache;
