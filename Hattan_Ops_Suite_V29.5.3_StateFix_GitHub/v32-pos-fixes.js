@@ -295,3 +295,67 @@
   window.receiptTicketHTML = v32Receipt;
   try { receiptTicketHTML = v32Receipt; } catch (_) {}
 })();
+
+/* V32.4 — Simple version customer search: no lag.
+ * Every key used to redraw the whole Simple counter screen and the box lost focus, so typing stalled
+ * after each letter. Now only the result list updates (after a short pause), the box keeps focus,
+ * CleanBase directory customers are included, and Enter picks the first match. */
+(function () {
+  'use strict';
+  if (typeof posCustomerSearchInput !== 'function') return;
+  const E = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  const fmtPhone = p => { const d = String(p || '').replace(/\D/g, '').replace(/^1(?=\d{10}$)/, ''); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : String(p || ''); };
+  const isSimpleBox = el => el && el.tagName === 'INPUT' && el.classList.contains('v13-giant-input') && /name or phone|nombre o tel/i.test(el.placeholder || '');
+  let timer = null, first = null;
+
+  function draw(input) {
+    const q = String(posCustomerSearch || '').trim();
+    let box = input.parentNode.querySelector(':scope > .v32-simple-results');
+    // Remove the list the full redraw put there (it is replaced by ours).
+    [...input.parentNode.children].forEach(el => { if (el !== box && !el.className && el.querySelector && el.querySelector(':scope > .v13-cust-row')) el.remove(); });
+    if (!box) { box = document.createElement('div'); box.className = 'v32-simple-results'; input.insertAdjacentElement('afterend', box); }
+    first = null;
+    if (!q) { box.innerHTML = ''; return; }
+    let local = [];
+    try { local = (typeof v8CustomerSearchResults === 'function' ? v8CustomerSearchResults(q) : []).slice(0, 8); } catch (_) {}
+    let dir = [];
+    try { if (typeof window.v296CounterMatches === 'function') dir = window.v296CounterMatches(q, new Set((state.customers || []).map(c => String(c.customerNumber || '')).filter(Boolean))).slice(0, Math.max(0, 8 - local.length)); } catch (_) {}
+    if (local[0]) first = () => posPickCustomer(local[0].id); else if (dir[0]) first = () => window.v296CounterPick(dir[0].num, true);
+    box.innerHTML = local.map(c => `<div class="v13-cust-row" onclick="posPickCustomer('${E(c.id)}')"><div class="avatar">${E(c.initials || '')}</div><div style="flex:1"><strong>${E(c.name)}</strong><small>${E(fmtPhone(c.phone))}</small></div>${icon('chevronright', 20)}</div>`).join('')
+      + dir.map(r => `<div class="v13-cust-row" onclick="v296CounterPick('${E(r.num)}', true)"><div class="avatar">${icon('user', 18)}</div><div style="flex:1"><strong>${E(r.name || 'Customer #' + r.num)}</strong><small>${E(fmtPhone(r.phone))}${r.street ? ' · ' + E(r.street) + (r.apt ? ' #' + E(r.apt) : '') : ''} · #${E(r.num)}</small></div>${icon('chevronright', 20)}</div>`).join('')
+      || `<div class="helper-text" style="padding:10px 4px">No match yet — keep typing, or tap New Customer.</div>`;
+  }
+
+  const base = posCustomerSearchInput;
+  const w = function v32CustomerSearchInput(value) {
+    const el = document.activeElement;
+    if (!isSimpleBox(el)) return base.apply(this, arguments);
+    posCustomerSearch = value;
+    if (!el.dataset.v32) {
+      el.dataset.v32 = '1'; el.autocomplete = 'off';
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(timer); draw(el); if (first) first(); } });
+    }
+    clearTimeout(timer);
+    timer = setTimeout(() => draw(el), 120);
+  };
+  window.posCustomerSearchInput = w; try { posCustomerSearchInput = w; } catch (_) {}
+})();
+
+/* V32.5 — Simple version Pay screen: the daily "charge every card on file" batch, same as the
+ * Payments screen in the regular version (same safety: manager only, once per ticket, no double charge). */
+(function () {
+  'use strict';
+  if (typeof v13RenderSimplePay !== 'function') return;
+  const base = v13RenderSimplePay;
+  const w = function v32RenderSimplePay(content) {
+    const r = base.apply(this, arguments);
+    try {
+      if (!(typeof v13PayOrderId !== 'undefined' && v13PayOrderId) && typeof window.v297Panel === 'function') {
+        const wrap = content.querySelector('.v13-simple-wrap') || content;
+        wrap.insertAdjacentHTML('beforeend', `<div class="v32-simple-batch">${window.v297Panel()}</div>`);
+      }
+    } catch (e) { console.error('V32 simple batch', e); }
+    return r;
+  };
+  window.v13RenderSimplePay = w; try { v13RenderSimplePay = w; } catch (_) {}
+})();

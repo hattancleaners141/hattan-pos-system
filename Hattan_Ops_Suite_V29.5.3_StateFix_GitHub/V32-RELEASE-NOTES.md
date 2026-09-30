@@ -55,3 +55,13 @@
 - "Cash / check price (3% off)" only when the customer is paying cash/check.
 - CleanBase customers keep the apartment in the second address line — it is now read everywhere
   (big apartment number on top of the ticket, address block, driver app, manifests).
+
+## V32.4 — Simple version customer search without lag
+- Typing no longer redraws the whole screen after each key (the box kept losing focus). Only the result
+  list updates, CleanBase directory customers are included, and Enter picks the first match.
+
+## V32.5 — Simple version Pay: daily batch charge
+- The Pay screen in the Simple version shows every unpaid ticket whose customer has a card on file,
+  grouped by customer, with one "Charge N tickets" button (Today / All unpaid up to today).
+- Same safeguards as the regular Payments screen: manager sign-in, each ticket charged once, declines
+  listed and left unpaid.

@@ -314,10 +314,11 @@
     out.sort((a, b) => (b.name ? 1 : 0) - (a.name ? 1 : 0) || b.t - a.t);
     return out.slice(0, 8);
   }
-  window.v296CounterPick = function (num) {
+  window.v296CounterMatches = (q, exclude) => counterMatches(String(q || '').trim(), exclude || new Set());
+  window.v296CounterPick = function (num, simple) {
     const r = D.byNum.get(String(num)); if (!r) return;
     const c = materialize(r);
-    loadLegacy(c).finally(() => { if (typeof saveState === 'function') saveState(); if (typeof window.v282Pick === 'function') window.v282Pick(c.id); else if (typeof posPickCustomer === 'function') { posPickCustomer(c.id); renderPosContent(); } });
+    loadLegacy(c).finally(() => { if (typeof saveState === 'function') saveState(); if (simple && typeof posPickCustomer === 'function') { posPickCustomer(c.id); renderPosContent(); } else if (typeof window.v282Pick === 'function') window.v282Pick(c.id); else if (typeof posPickCustomer === 'function') { posPickCustomer(c.id); renderPosContent(); } });
   };
   function augmentCounter() {
     const box = document.querySelector('#pos-content .v282-results'); const input = document.getElementById('v282search');

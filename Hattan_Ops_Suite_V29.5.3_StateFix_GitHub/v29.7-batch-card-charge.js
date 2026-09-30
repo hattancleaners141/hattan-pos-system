@@ -96,7 +96,8 @@
     window.renderPosPayments = w;
     try { renderPosPayments = w; } catch (_) {}
   }
-  const refresh = () => { if (state.posNav === 'payments') renderPosContent(); };
+  const refresh = () => { if (state.posNav === 'payments' || state.posNav === 'v13pay') renderPosContent(); };
+  window.v297Panel = () => panel(); // also shown on the Simple version's Pay screen (v32-pos-fixes.js)
   window.v297Mode = m => { B.mode = m === 'all' ? 'all' : 'today'; refresh(); };
   window.v297Toggle = (id, on) => { if (on) B.skip.delete(id); else B.skip.add(id); refresh(); };
   window.v297All = on => { candidates(B.mode).forEach(o => on ? B.skip.delete(o.id) : B.skip.add(o.id)); refresh(); };
