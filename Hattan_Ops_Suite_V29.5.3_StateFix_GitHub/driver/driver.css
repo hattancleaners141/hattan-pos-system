@@ -37,3 +37,14 @@
 .outbox { background: #fff4e5; color: #7a5a12; font-size: 12.5px; font-weight: 600; padding: 8px 12px; text-align: center; }
 a.btn { text-decoration: none; }
 .reorder svg { transform: rotate(90deg); }
+/* V32 — several customers at one building, grouped like one stop */
+.stop-card + .bldg-card, .bldg-card + .stop-card, .bldg-card + .bldg-card { margin-top: 10px; }
+.bldg-card { background: var(--surface); border: 1.5px solid var(--brand); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+.bldg-head { display: flex; gap: 12px; align-items: flex-start; padding: 14px; background: var(--surface-sunken); }
+.bldg-head .stop-name { display: flex; align-items: center; gap: 6px; }
+.bldg-unit { display: flex; gap: 12px; align-items: center; padding: 11px 14px; border-top: 1px solid var(--hairline); cursor: pointer; }
+.bldg-unit:active { background: var(--surface-sunken); }
+.unit-apt { min-width: 64px; font-weight: 800; font-size: 13px; color: var(--brand); }
+.bldg-unit.pickup .unit-apt { color: var(--gold); }
+.unit-go { color: var(--ink-tertiary, #8a9089); }
+.bldg-banner { display: flex; gap: 8px; align-items: flex-start; background: #eef7f3; border: 1px solid #cfe6da; color: #123d2b; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 13.5px; }

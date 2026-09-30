@@ -1,0 +1,9 @@
+/* V32 — checkout Pickup / Delivery: make the chosen option obvious */
+.v282-actions button{cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+.v282-actions button.sel{border:2px solid var(--brand,#163f36);background:var(--brand,#163f36);color:#fff;box-shadow:0 2px 6px rgba(22,63,54,.25)}
+.v282-actions button.sel::before{content:"✓ "}
+.v282-checkout button.sel{border:2px solid var(--brand,#163f36);background:#e2f2ea;color:#123d2b}
+.v282-checkout button.sel::before{content:"✓ "}
+/* V32 — steady sync pill (no header jump while saving) */
+.v16-sync-pill{min-width:118px;justify-content:center}
+.v16-sync-pill.v32-saving{background:rgba(12,163,12,.08);color:#2f6b3a}

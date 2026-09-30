@@ -127,13 +127,27 @@ function v16MergeArray(local = [], base = [], remote = []) {
   return merged;
 }
 
+const v16IsPlainObject = value => !!value && typeof value === 'object' && !Array.isArray(value);
+// V32: settings-style objects (customer memos, settings, daily revenue…) merge key by key, so two
+// counters changing different entries at the same moment both keep their change.
+function v16MergeValue(l, b, r, depth = 0) {
+  if (Array.isArray(l) || Array.isArray(b) || Array.isArray(r)) return v16MergeArray(l || [], b || [], r || []);
+  if (depth < 4 && v16IsPlainObject(l) && v16IsPlainObject(r) && (b === undefined || v16IsPlainObject(b))) {
+    const base = b || {}, out = {};
+    new Set([...Object.keys(r), ...Object.keys(base), ...Object.keys(l)]).forEach(key => {
+      const value = v16MergeValue(l[key], base[key], r[key], depth + 1);
+      if (value !== undefined) out[key] = value;
+    });
+    return out;
+  }
+  return v16JsonEqual(l, b) ? r : l;
+}
 function v16MergeSnapshots(local, base, remote) {
   const merged = {};
   const keys = new Set([...Object.keys(remote || {}), ...Object.keys(base || {}), ...Object.keys(local || {})]);
   keys.forEach(key => {
-    const l = local?.[key], b = base?.[key], r = remote?.[key];
-    if (Array.isArray(l) || Array.isArray(b) || Array.isArray(r)) merged[key] = v16MergeArray(l || [], b || [], r || []);
-    else merged[key] = v16JsonEqual(l, b) ? r : l;
+    const value = v16MergeValue(local?.[key], base?.[key], remote?.[key]);
+    if (value !== undefined) merged[key] = value;
   });
   return merged;
 }
@@ -175,8 +189,17 @@ function v16SafeRender() {
   if (state.session?.loggedIn) renderPosContent(); else renderPosRoot();
 }
 
+// V32: remember exactly what this counter last had in sync with the server, so a pull or a
+// realtime update only counts as "local changes" when staff actually changed something.
+function v16SnapshotText(snapshot) {
+  try { return JSON.stringify(snapshot || v16BuildSnapshot()); } catch (_) { return ''; }
+}
+function v16MarkSynced(snapshot) { v16Live.syncedText = v16SnapshotText(snapshot); }
 function v16HasLocalChanges() {
-  return !!v16Live.baseline && !v16JsonEqual(v16BuildSnapshot(), v16Live.baseline);
+  if (!v16Live.baseline) return false;
+  const current = v16SnapshotText();
+  if (v16Live.syncedText && current === v16Live.syncedText) return false;
+  return current !== v16SnapshotText(v16Live.baseline);
 }
 
 function v16ClearBrowserBusinessStorage() {
@@ -202,18 +225,27 @@ saveState = function v16SaveState() {
 
 function v16QueueSync() {
   clearTimeout(v16Live.syncTimer);
-  v16Live.syncStatus = 'pending';
-  renderConnPills();
-  v16Live.syncTimer = setTimeout(v16PushState, 650);
+  // Only show "Saving…" when there is really something new to send.
+  if (v16Live.syncedText && v16SnapshotText() === v16Live.syncedText) {
+    if (!v16Live.syncing && ['pending','syncing'].includes(v16Live.syncStatus)) { v16Live.syncStatus = 'live'; renderConnPills(); }
+    return;
+  }
+  if (v16Live.syncStatus !== 'pending') { v16Live.syncStatus = 'pending'; renderConnPills(); }
+  v16Live.syncTimer = setTimeout(v16PushState, 900);
 }
 
 async function v16PushState() {
   if (!v16IsShared() || !v16Live.authenticated) return;
   if (v16Live.syncing) { v16Live.queued = true; return; }
+  const local = v16BuildSnapshot();
+  const localText = v16SnapshotText(local);
+  if (v16Live.syncedText && localText === v16Live.syncedText) {
+    v16Live.syncStatus = 'live'; renderConnPills();
+    return;
+  }
   v16Live.syncing = true;
   v16Live.syncStatus = 'syncing';
   renderConnPills();
-  const local = v16BuildSnapshot();
   const response = await v16Api('state-sync', {
     method:'PUT',
     body:JSON.stringify({ snapshot:local, baseVersion:v16Live.version, clientId:v16Live.clientId }),
@@ -231,6 +263,8 @@ async function v16PushState() {
   if (response.ok) {
     v16Live.version = Number(response.data?.version || v16Live.version + 1);
     v16Live.baseline = v16SafeClone(local);
+    v16Live.syncedText = localText;
+    v16Live.savedAt = Date.now();
     v16Live.syncStatus = 'live';
   } else {
     v16Live.syncStatus = response.status === 401 ? 'signed-out' : 'offline';
@@ -257,12 +291,13 @@ async function v16PullState(render = true) {
       v16ApplySnapshot(merged, render);
       v16QueueSync();
     } else {
+      const changed = Number(response.data.version || 0) !== v16Live.version || !v16Live.syncedText;
       v16Live.version = Number(response.data.version || 0);
       v16Live.baseline = v16SafeClone(remote);
-      v16ApplySnapshot(remote, render);
+      if (changed) { v16ApplySnapshot(remote, render); v16MarkSynced(); }
     }
   }
-  v16Live.syncStatus = 'live';
+  if (!['pending','syncing'].includes(v16Live.syncStatus)) v16Live.syncStatus = 'live';
   renderConnPills();
   return response;
 }
@@ -317,6 +352,7 @@ function v16ReceiveRealtime(row) {
     v16Live.version = Number(row.version || 0);
     v16Live.baseline = v16SafeClone(remote);
     v16ApplySnapshot(remote, true);
+    v16MarkSynced();
   }
   toast(`Updated from another counter · ${row.updated_by || 'staff'}`, true, 'refresh');
 }
@@ -334,11 +370,15 @@ const v16BaseConnPillHTML = connPillHTML;
 connPillHTML = function v16ConnPillHTML() {
   if (!v16Live.config || !v16IsShared()) return `<div class="conn-pill offline v16-local-pill">${icon('wifioff',13)}<span>Local Demo Only</span></div>`;
   const labels = {
-    starting:'Connecting…', pending:'Saving…', syncing:'Saving…', live:'Shared Live',
-    polling:'Shared · 5 sec', offline:'Sync Offline', 'signed-out':'Sign In Required',
+    starting:'Connecting…', pending:'Saving…', syncing:'Saving…', live:'Saved · Live',
+    polling:'Saved · Live', offline:'Sync Offline', 'signed-out':'Sign In Required',
   };
-  const good = ['live','polling'].includes(v16Live.syncStatus);
-  return `<div class="conn-pill ${good ? 'online' : 'offline'} v16-sync-pill" title="${good ? 'This counter shares updates with the other counters' : 'Open Settings to check the live connection'}">${icon(good?'wifi':'wifioff',13)}<span>${labels[v16Live.syncStatus] || 'Connecting…'}</span></div>`;
+  const status = v16Live.syncStatus;
+  const saving = ['pending','syncing'].includes(status);
+  const good = saving || ['live','polling'].includes(status);
+  const title = saving ? 'Saving in the background — keep working, nothing is lost'
+    : good ? 'All changes saved and shared with the other counters' : 'Open Settings to check the live connection';
+  return `<div class="conn-pill ${good ? 'online' : 'offline'} v16-sync-pill${saving ? ' v32-saving' : ''}" title="${title}">${icon(good?'wifi':'wifioff',13)}<span>${labels[status] || 'Connecting…'}</span></div>`;
 };
 
 async function v16FetchStaff() {
