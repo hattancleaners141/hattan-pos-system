@@ -136,14 +136,79 @@
           const rec = await record(p);
           cleanup();
           if (!rec.ok) return showPending(p, rec.error);
-          modal('Paid on Clover Flex', `<div class="v33-flex-good">${icon('checkcircle', 22)} ${money(rec.pay.amountCents / 100)} approved${rec.pay.last4 ? ` · ${E(rec.pay.brand || 'Card')} •${E(rec.pay.last4)}` : ''}</div>`, `<button class="btn btn-primary" id="v33-done">Done</button>`);
-          document.getElementById('v33-done').onclick = () => { closePosModal(); if (typeof onPaid === 'function') onPaid(rec.pay); else renderPosContent(); };
+          const payer = saveCandidate(attempt.lines);
+          modal('Paid on Clover Flex', `<div class="v33-flex-good">${icon('checkcircle', 22)} ${money(rec.pay.amountCents / 100)} approved${rec.pay.last4 ? ` · ${E(rec.pay.brand || 'Card')} •${E(rec.pay.last4)}` : ''}</div>${payer ? offerHTML(payer) : ''}`, `<button class="btn ${payer ? 'btn-ghost' : 'btn-primary'}" id="v33-done">${payer ? 'No thanks — Done' : 'Done'}</button>`);
+          const finish = () => { closePosModal(); if (typeof onPaid === 'function') onPaid(rec.pay); else renderPosContent(); };
+          document.getElementById('v33-done').onclick = finish;
+          const sv = document.getElementById('v33-save-card'); if (sv) sv.onclick = () => F.saveCard(payer.id, finish);
         },
       });
       connector.addCloverConnectorListener(listener);
       timer = setTimeout(() => fail('The Flex did not answer. Make sure it is on, connected to Wi-Fi, and Cloud Pay Display is open.', true), 45000);
       connector.initializeConnection();
     } catch (e) { fail(e.message || 'Flex payment failed', true); }
+  };
+
+  /* ---------------- save the card on file from the Flex (second tap) ---------------- */
+  const hasCloverCard = c => (c && c.paymentMethods || []).some(p => p.processor === 'clover');
+  function saveCandidate(lines) {
+    if (!F.status || !F.status.canSaveCards) return null;
+    const ids = [...new Set(lines.map(l => (state.orders.find(o => o.id === l.orderId) || {}).customerId).filter(Boolean))];
+    if (ids.length !== 1) return null;
+    const c = customerById(ids[0]);
+    return c && !hasCloverCard(c) ? c : null;
+  }
+  const offerHTML = c => `<div class="v33-save-offer"><strong>Save this card for future charges?</strong>
+    <p class="helper-text" style="margin:4px 0 8px">The customer taps the same card once more on the Flex. Then it can be used for the daily batch charge and Pay Now — no typing.</p>
+    <input id="v33-save-email" class="text-input" type="email" placeholder="Customer email (Clover requires it)" value="${E(c.email || '')}">
+    <label class="v33-consent"><input id="v33-save-consent" type="checkbox"> <span>${E(c.name)} agrees to let Hattan Cleaners keep this card on file for future orders.</span></label>
+    <button class="btn btn-primary btn-block" id="v33-save-card">${icon('creditcard', 16)} Save card — customer taps again</button></div>`;
+
+  F.saveCard = async function (customerId, onDone) {
+    const c = customerById(customerId); if (!c) return;
+    const email = String(document.getElementById('v33-save-email')?.value || '').trim();
+    if (!document.getElementById('v33-save-consent')?.checked) return toast('Check the box once the customer agrees', false, 'alerttriangle');
+    if (!/^\S+@\S+\.\S+$/.test(email)) return toast('Enter the customer\'s email — Clover requires it', false, 'alerttriangle');
+    if (F.busy) return; F.busy = true;
+    let connector = null, finished = false, timer = null;
+    const end = () => { clearTimeout(timer); try { connector && connector.dispose(); } catch (_) {} connector = null; F.busy = false; };
+    const bad = msg => { if (finished) return; finished = true; end();
+      modal('Card not saved', `<div class="v33-flex-bad">${E(msg)}</div><p class="helper-text">The payment is already complete — only saving the card didn't work. You can add the card later from the customer's profile.</p>`, `<button class="btn btn-primary" id="v33-done2">Done</button>`);
+      document.getElementById('v33-done2').onclick = () => { closePosModal(); onDone && onDone(); }; };
+    try {
+      modal('Save card on file', waitHTML(0, 'Connecting to the Flex…').replace(/<div class="v33-flex-amount">[^<]*<\/div>/, ''), `<button class="btn btn-ghost" id="v33-cancel">Cancel</button>`);
+      document.getElementById('v33-cancel').onclick = () => { try { connector && connector.resetDevice(); } catch (_) {} bad('Cancelled at the counter'); };
+      const b = await v16Api('clover-device', { method: 'POST', body: JSON.stringify({ action: 'vaultBegin' }) });
+      if (!b.ok) { F.busy = false; return bad(b.data?.error || 'Could not reach the Flex'); }
+      await loadSdk();
+      const C = window.clover, d = b.data.device;
+      const cf = {}; cf[C.CloverConnectorFactoryBuilder.FACTORY_VERSION] = C.CloverConnectorFactoryBuilder.VERSION_12;
+      const cfg = new C.WebSocketCloudCloverDeviceConfigurationBuilder(d.raid, d.deviceId, d.merchantId, d.accessToken).setCloverServer(d.cloverServer).setFriendlyId(d.friendlyId || 'Hattan POS').setForceConnect(true).build();
+      connector = C.CloverConnectorFactoryBuilder.createICloverConnectorFactory(cf).createICloverConnector(cfg);
+      const line = t => { const el = document.querySelector('.v33-flex-line'); if (el) el.textContent = t; };
+      connector.addCloverConnectorListener(Object.assign({}, C.remotepay.ICloverConnectorListener.prototype, {
+        onDeviceReady: () => { if (finished) return; clearTimeout(timer); line('Customer: tap the same card on the Flex to save it'); connector.vaultCard(); },
+        onDeviceError: ev => bad(`The Flex reported a problem: ${ev && ev.getMessage ? ev.getMessage() : 'device error'}`),
+        onVaultCardResponse: async res => {
+          if (finished) return;
+          const card = res && res.getSuccess && res.getSuccess() ? res.getCard() : null;
+          if (!card || !card.getToken()) return bad((res && res.getMessage && res.getMessage()) || 'The card was not read');
+          finished = true; line('Saving the card…');
+          const r = await v16Api('clover-device', { method: 'POST', body: JSON.stringify({ action: 'vault', consent: true, customerId, email, name: c.name, token: card.getToken(), last4: card.getLast4 ? card.getLast4() : '' }) });
+          end();
+          if (!r.ok) { finished = false; return bad(r.data?.error || 'Clover could not save the card'); }
+          c.email = c.email || email;
+          c.paymentMethods = (c.paymentMethods || []).filter(p => p.processor !== 'clover');
+          c.paymentMethods.unshift(r.data.card);
+          try { recordSync(`Card on file saved from the Clover Flex · ${c.name} · •${r.data.card.last4 || ''}`); } catch (_) {}
+          if (typeof saveState === 'function') saveState();
+          modal('Card saved', `<div class="v33-flex-good">${icon('checkcircle', 22)} ${E(r.data.card.brand || 'Card')} •${E(r.data.card.last4 || '')} saved for ${E(c.name)}</div>`, `<button class="btn btn-primary" id="v33-done3">Done</button>`);
+          document.getElementById('v33-done3').onclick = () => { closePosModal(); onDone && onDone(); };
+        },
+      }));
+      timer = setTimeout(() => bad('The Flex did not answer. Make sure Cloud Pay Display is open.'), 45000);
+      connector.initializeConnection();
+    } catch (e) { bad(e.message || 'Could not save the card'); }
   };
 
   // Approved on the Flex but the POS could not save it yet (e.g. internet dropped) — never charge again.
@@ -210,7 +275,8 @@
       ${isManager() ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><select id="v33-dev" class="text-input" style="flex:1;min-width:200px"><option value="">${(s.devices || []).length ? 'Choose a device…' : 'Load devices…'}</option>${(s.devices || []).map(d => `<option value="${E(d.id)}" ${s.device && s.device.id === d.id ? 'selected' : ''}>${E(d.name)} · ${E(d.model)} · ${E(d.serial)}</option>`).join('')}</select>
         <button class="btn btn-secondary" onclick="v33FlexDevices()">Refresh list</button><button class="btn btn-primary" onclick="v33FlexSelect()">Use this device</button>
         <a class="btn btn-ghost" href="/.netlify/functions/clover-oauth?start=1">Reconnect</a><button class="btn btn-ghost" style="color:#b42318" onclick="v33FlexDisconnect()">Disconnect</button></div>` : ''}
-      <div class="helper-text" style="margin-top:8px">On the Flex, keep the <strong>Cloud Pay Display</strong> app open while taking payments.</div>`;
+      <div class="helper-text" style="margin-top:8px">On the Flex, keep the <strong>Cloud Pay Display</strong> app open while taking payments.</div>
+      <div class="helper-text" style="margin-top:4px">Save cards from the Flex: ${!s.canSaveCards ? 'available once the Flex uses the live Clover app' : s.multiPay === false ? '<strong style="color:#b42318">off — ask Clover support to enable “multi-pay tokens” on your account</strong>' : s.multiPay ? '<strong style="color:#0a7a0a">ready</strong>' : 'tap “Refresh list” to check'}</div>`;
     return `<div class="pos-card v33-flex-settings"><div style="display:flex;align-items:center;gap:10px"><h3 style="margin:0">${icon('creditcard', 17)} Clover Flex</h3>${envTag}</div>${body}</div>`;
   }
   const rerenderSettings = () => { const el = document.querySelector('.v33-flex-settings'); if (el) el.outerHTML = settingsCard(); };

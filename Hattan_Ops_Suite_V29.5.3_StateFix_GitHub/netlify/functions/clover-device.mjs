@@ -5,10 +5,15 @@
 // POST {action:'begin', orderIds}      → reserves the tickets and returns the amount + a one-sale device session
 // POST {action:'record', attemptId, paymentId} → verifies the payment with Clover, marks the reservation paid
 // POST {action:'abort', attemptId, reason}     → releases the reservation (declined / cancelled)
-import { assertSameOrigin, handleError, insertRows, json, methodNotAllowed, parseBody, requireSession, selectRows, storeId, updateRows, HttpError } from './lib/shared.mjs';
+// POST {action:'vaultBegin'}                   → device session for "save this card" (customer taps again, consents on the Flex)
+// POST {action:'vault', customerId, token, …}  → saves the Flex card token as the customer's Clover card on file
+import { assertSameOrigin, env, handleError, insertRows, json, methodNotAllowed, parseBody, requireSession, selectRows, storeId, updateRows, HttpError } from './lib/shared.mjs';
+import { saveCardOnFile } from './lib/card-vault.mjs';
 import { deleteAuth, deviceApi, deviceConfig, deviceConfigured, expectedCents, readAuth, saveAuth, validAuth } from './lib/clover-device.mjs';
 
 const sid = () => encodeURIComponent(storeId());
+// Cards saved from the Flex go to the same Clover account the batch charge uses — only when both are on the same environment.
+const sameEnv = () => deviceConfig().environment === (env('CLOVER_ENVIRONMENT', 'sandbox').toLowerCase() === 'production' ? 'production' : 'sandbox');
 const clean = v => String(v || '').replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 80);
 
 async function txFor(attemptId) {
@@ -23,11 +28,15 @@ export const handler = async (event) => {
     const c = deviceConfig();
     if (event.httpMethod === 'GET') {
       const a = deviceConfigured() ? await readAuth().catch(() => null) : null;
-      let devices = [];
+      let devices = [], multiPay = null;
       if (a && manager && event.queryStringParameters?.devices) {
-        try { devices = ((await deviceApi(await validAuth(), '/devices'))?.elements || []).map(d => ({ id: d.id, serial: d.serial || '', name: d.name || d.productName || d.deviceTypeName || 'Clover device', model: d.deviceTypeName || d.model || '' })); } catch (_) {}
+        try {
+          const v = await validAuth();
+          devices = ((await deviceApi(v, '/devices'))?.elements || []).map(d => ({ id: d.id, serial: d.serial || '', name: d.name || d.productName || d.deviceTypeName || 'Clover device', model: d.deviceTypeName || d.model || '' }));
+          try { const g = await deviceApi(v, '/gateway'); multiPay = !!(g && g.supportsMultiPayToken); } catch (_) {}
+        } catch (_) {}
       }
-      return json(200, { ok: true, configured: deviceConfigured(), environment: c.environment, connected: !!a, merchantId: a?.merchant_id || '', device: a?.device_id ? { id: a.device_id, serial: a.device_serial, name: a.device_name } : null, connectedBy: a?.connected_by || '', devices });
+      return json(200, { ok: true, configured: deviceConfigured(), environment: c.environment, connected: !!a, merchantId: a?.merchant_id || '', device: a?.device_id ? { id: a.device_id, serial: a.device_serial, name: a.device_name } : null, connectedBy: a?.connected_by || '', devices, multiPay, canSaveCards: sameEnv() });
     }
     assertSameOrigin(event);
     const body = parseBody(event);
@@ -103,6 +112,27 @@ export const handler = async (event) => {
       if (rows.some(r => r.status === 'succeeded')) return json(200, { ok: true, kept: true });
       await updateRows('payment_transactions', `store_id=eq.${sid()}&processor=eq.clover-flex&status=eq.processing&idempotency_key=like.${encodeURIComponent(`flex:${attemptId}:*`)}`, { status: 'failed', error_message: String(body.reason || 'Cancelled').slice(0, 300) });
       return json(200, { ok: true });
+    }
+    if (body.action === 'vaultBegin') {
+      if (!sameEnv()) throw new HttpError(409, 'Saving cards from the Flex starts once the Flex uses the live Clover app');
+      const a = await validAuth();
+      if (!a.device_id) throw new HttpError(409, 'Choose which Clover device to use in Settings → Clover Flex');
+      return json(200, { ok: true, device: { raid: c.raid, cloverServer: c.cloverServer, merchantId: a.merchant_id, deviceId: a.device_id, accessToken: a.access_token, friendlyId: `Hattan POS ${session.name || ''}`.trim().slice(0, 40), environment: c.environment } });
+    }
+    if (body.action === 'vault') {
+      if (!sameEnv()) throw new HttpError(409, 'Saving cards from the Flex starts once the Flex uses the live Clover app');
+      if (body.consent !== true) throw new HttpError(400, 'The customer has to agree on the Flex before the card is saved');
+      const customerId = String(body.customerId || '').trim();
+      const token = String(body.token || '').trim();
+      const email = String(body.email || '').trim();
+      if (!customerId) throw new HttpError(400, 'Customer is required');
+      if (!/^[A-Za-z0-9_-]{6,120}$/.test(token)) throw new HttpError(400, 'The Flex did not return a valid card token');
+      if (!/^\S+@\S+\.\S+$/.test(email)) throw new HttpError(400, 'Clover needs the customer\'s email to save a card on file');
+      const store = (await selectRows('pos_state', `store_id=eq.${sid()}&limit=1`, 'payload'))?.[0]?.payload || {};
+      const cust = (store.customers || []).find(x => String(x?.id) === customerId);
+      if (!cust) throw new HttpError(409, 'This customer is not saved to the store yet — try again in a moment');
+      const card = await saveCardOnFile(event, session, { customerId, token, email, name: String(body.name || cust.name || '').trim(), phone: cust.phone, fallback: { last4: String(body.last4 || '').replace(/\D/g, '').slice(-4), brand: String(body.brand || '').slice(0, 20) } });
+      return json(201, { ok: true, card });
     }
     throw new HttpError(400, 'Unknown action');
   } catch (error) { return handleError(error); }
