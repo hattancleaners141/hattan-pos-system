@@ -37,10 +37,12 @@ export async function signedUrls(paths, seconds = 3600) {
 export const photoPath = (orderId, kind) => `${nyToday()}/${String(orderId).replace(/[^A-Za-z0-9_-]/g, '')}/${kind}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.jpg`;
 
 // ---------------------------------------------------------------- stops
+// CleanBase customers store the street as line1 and the apartment as line2 — normalize both shapes.
+const normAddr = a => a ? { ...a, street: a.street || a.line1 || '', apartment: String(a.apartment || a.apt || a.unit || a.line2 || '').replace(/^(?:apt\.?|apartment|unit|#)\s*/i, '').trim() } : null;
 export function addressFor(o, c) {
-  if (o.address && typeof o.address === 'object') return o.address;
+  if (o.address && typeof o.address === 'object') return normAddr(o.address);
   const list = c?.addresses || [];
-  return list.find(a => a.id === o.address || a.id === o.addressId) || list[0] || null;
+  return normAddr(list.find(a => a.id === o.address || a.id === o.addressId) || list[0] || null);
 }
 export const addressText = a => a ? [a.street || a.line1 || a.building, a.apartment && !String(a.line1 || '').includes(a.apartment) ? `Apt ${a.apartment}` : '', a.postalCode || a.zip].filter(Boolean).join(', ') : '';
 const isDelivery = o => o && (o.channel === 'delivery' || o.fulfillment === 'delivery');

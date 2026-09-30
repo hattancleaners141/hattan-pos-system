@@ -46,3 +46,12 @@
 - Driver app: separate **Pickups** and **Deliveries** sections with counts; buildings are grouped
   inside each section; "Start deliveries" sits in the Deliveries section.
 - Driver app: "Deliveries with no driver — take them" lets a driver claim stuck deliveries.
+
+## V32.3 — printed ticket clean-up
+- No Chinese on customer tickets. Wash & Fold tickets get one boxed Chinese line for the laundry team's
+  directions (separate colors, low dry, no softener, own detergent, hang dry, fragrance-free, cold wash…).
+- Totals: no Sub.T / Tax / G.Total. Unpaid → "Balance"; partly prepaid → Total, PrePay, Balance;
+  paid → Total + PAID. Card fee / cash discount lines only when they apply.
+- "Cash / check price (3% off)" only when the customer is paying cash/check.
+- CleanBase customers keep the apartment in the second address line — it is now read everywhere
+  (big apartment number on top of the ticket, address block, driver app, manifests).
