@@ -1,5 +1,5 @@
 // GET  /.netlify/functions/driver-route               → today's stops for the signed-in driver
-// POST { action:'claim', orderIds }                     → take an open app pickup
+// POST { action:'claim', orderIds, kind? }              → take an open app pickup (or an unassigned delivery, kind:'delivery')
 // POST { action:'start', orderIds }                     → mark deliveries "Out for delivery"
 import { assertSameOrigin, handleError, json, methodNotAllowed, parseBody, requireSession, HttpError } from './lib/shared.mjs';
 import { mutateStore, readStore } from './lib/app.mjs';
@@ -19,8 +19,13 @@ export const handler = async (event) => {
     if (!ids.length) throw new HttpError(400, 'No tickets given');
     if (body.action === 'claim') {
       await mutateStore(s => {
-        const list = allowedOrders(s, session.sub, ids, 'pickup');
-        list.forEach(o => { o.assignedDriverId = session.sub; o.assignedDriverName = session.name; o.assignedAt = new Date().toISOString(); });
+        const kind = body.kind === 'delivery' ? 'claimDelivery' : 'pickup';
+        const list = allowedOrders(s, session.sub, ids, kind);
+        const now = new Date().toISOString();
+        list.forEach(o => {
+          o.assignedDriverId = session.sub; o.assignedDriverName = session.name; o.assignedAt = now;
+          if (kind === 'claimDelivery') (o.activity = o.activity || []).unshift({ id: 'evt_' + Date.now().toString(36), type: 'driver_claim', label: `Taken by ${session.name} in the driver app`, at: now, by: session.name });
+        });
       });
     } else if (body.action === 'start') {
       await mutateStore(s => {

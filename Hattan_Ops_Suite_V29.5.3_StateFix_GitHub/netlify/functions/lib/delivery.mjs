@@ -60,7 +60,8 @@ function orderLine(o) {
 export function routeFor(store, driverId) {
   const today = nyToday();
   const customers = new Map((store.customers || []).map(c => [String(c.id), c]));
-  const deliveries = [], pickups = [], openPickups = [], done = [];
+  const deliveries = [], pickups = [], openPickups = [], openDeliveries = [], done = [];
+  const orphan = o => isOrphanDelivery(store, o);
   for (const o of store.orders || []) {
     if (!isDelivery(o) || o.status === 'voided') continue;
     const mine = String(o.assignedDriverId || '') === String(driverId);
@@ -75,6 +76,7 @@ export function routeFor(store, driverId) {
       continue;
     }
     if (mine && o.driverRouteReady) deliveries.push(o);
+    else if (orphan(o)) openDeliveries.push(o);
   }
   const group = (list, kind) => {
     const stops = new Map();
@@ -99,15 +101,25 @@ export function routeFor(store, driverId) {
     today,
     stops: [...group(pickups, 'pickup'), ...group(deliveries, 'delivery')],
     openPickups: group(openPickups, 'pickup'),
+    openDeliveries: group(openDeliveries, 'delivery'),
     done: done.slice(0, 50).map(o => ({ id: o.id, ticket: String(o.ticket || o.id).replace(/^HC-/, ''), kind: o.status === 'delivered' ? 'delivery' : 'pickup', at: o.deliveredAt || o.pickedUpAt, name: customers.get(String(o.customerId))?.name || '' })),
   };
+}
+// A delivery sent to the driver apps whose driver no longer exists / was never set — any driver may take it.
+export function isOrphanDelivery(store, o) {
+  if (!o || !isDelivery(o) || !o.driverRouteReady || ['delivered', 'voided', 'picked_up', 'scheduled'].includes(o.status)) return false;
+  const id = String(o.assignedDriverId || '');
+  if (!id) return true;
+  const staff = (store.staff || []).filter(x => x && x.id);
+  return staff.length > 0 && !staff.some(x => String(x.id) === id && x.active !== false);
 }
 // Orders this driver may act on right now (assigned to them, or an open pickup).
 export function allowedOrders(store, driverId, ids, kind) {
   const set = new Set(ids.map(String));
   const today = nyToday();
   const out = (store.orders || []).filter(o => set.has(String(o.id)) && isDelivery(o) && o.status !== 'voided' && (
-    kind === 'pickup'
+    kind === 'claimDelivery' ? isOrphanDelivery(store, o)
+    : kind === 'pickup'
       ? o.status === 'scheduled' && (String(o.assignedDriverId || '') === String(driverId) || (!o.assignedDriverId && (!o.pickupDate || o.pickupDate <= today)))
       : String(o.assignedDriverId || '') === String(driverId) && o.driverRouteReady && o.status !== 'delivered'
   ));

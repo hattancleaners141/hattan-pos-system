@@ -36,3 +36,13 @@
 - Switching a delivery back to pickup takes it off the driver's route and the Scan for Delivery list;
   an "Out for delivery" ticket goes back to Ready.
 - The change is written to the ticket's activity and edit history.
+
+## V32.2 — deliveries always reach a driver; Pickups and Deliveries sections
+- Bug: the "Send route to driver" menu could display one driver while the saved choice was an old
+  demo driver, so manifests went out "Unassigned" and never reached any driver app. The choice is now
+  checked before sending (falls back to the driver shown in the menu).
+- Delivery screen: a "Needs a driver" card lists any delivery stuck without a real driver — pick the
+  driver and tap "Send to driver app" (also fixes the manifest's driver).
+- Driver app: separate **Pickups** and **Deliveries** sections with counts; buildings are grouped
+  inside each section; "Start deliveries" sits in the Deliveries section.
+- Driver app: "Deliveries with no driver — take them" lets a driver claim stuck deliveries.
