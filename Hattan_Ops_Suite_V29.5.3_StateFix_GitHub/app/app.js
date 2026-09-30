@@ -406,6 +406,11 @@
           : `<div class="muted small">We'll count and price your items once they're at the shop.</div>`}
         ${o.notes ? `<div class="price-line"><span class="muted">Notes</span><span style="text-align:right;max-width:65%">${esc(o.notes)}</span></div>` : ''}
       </div>
+      ${(o.proofs || []).map(p => `<div class="section-title">${p.kind === 'delivery' ? 'Delivery proof' : 'Pickup proof'}</div>
+        <div class="card"><div class="row-title">${esc(p.kind === 'delivery' ? 'Delivered' : 'Picked up')} · ${esc(when(p.at))}</div>
+          <div class="row-sub">${esc([p.method, p.recipient, p.driver ? 'by ' + p.driver : ''].filter(Boolean).join(' · '))}</div>
+          ${p.photos.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Proof photo" style="width:100%;border-radius:14px;margin-top:10px;display:block"></a>`).join('')}
+          ${p.gps ? '<div class="cash-note">' + icon('mappin', 12) + ' Location recorded at handoff</div>' : ''}</div>`).join('')}
       <div class="spacer"></div>
       ${o.canPay ? `<button class="btn btn-gold btn-block" id="b-pay1">${icon('creditcard', 16)} Pay ${money(o.amountDue)}</button><div class="spacer"></div>` : ''}
       ${o.receiptUrl ? `<a class="btn btn-ghost btn-block" href="${esc(o.receiptUrl)}" target="_blank" rel="noopener">${icon('receipt', 16)} View receipt</a>` : ''}
@@ -633,6 +638,7 @@
       else if (o.status === 'ready') out.push({ hot: true, icon: 'checkcircle', title: `#${o.ticket} is ready${o.channel === 'delivery' ? ' — delivery coming soon' : ' for pickup'}`, at: o.readyAt || o.createdAt, id: o.id });
       else if (o.status === 'scheduled') out.push({ icon: 'calendar', title: `Pickup ${dayLabel(o.pickupDate)}, ${o.window}`, at: o.createdAt, id: o.id });
       else if (!o.done) out.push({ icon: 'sparkle', title: `#${o.ticket} is ${stageTitle(o).toLowerCase()}`, at: o.createdAt, id: o.id });
+      else if (o.status === 'delivered' && (o.proofs || []).length) out.push({ hot: false, icon: 'camera', title: `#${o.ticket} delivered — see photo`, at: o.proofs[0].at, id: o.id });
       else if (o.paid && o.paidAt) out.push({ icon: 'receipt', title: `Paid ${money(o.total - o.discount - o.storeCreditApplied)} for #${o.ticket}`, at: o.paidAt, id: o.id });
     });
     return out.sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 12);

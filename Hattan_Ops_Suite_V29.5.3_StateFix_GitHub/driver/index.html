@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hattan Driver</title>
+<meta name="theme-color" content="#123d2b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hattan Driver">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../app/icons/icon-192.png">
+<link rel="apple-touch-icon" href="../app/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="../app/app.css?v=31.0">
+<link rel="stylesheet" href="driver.css?v=31.0">
+</head>
+<body>
+<div class="app" id="app">
+  <div id="root" style="display:flex;flex-direction:column;height:100%;min-height:0"></div>
+  <div class="toast-host" id="toasts"></div>
+  <div class="sheet-host"><div class="sheet-overlay" id="sheet-overlay"></div><div class="sheet" id="sheet"><div class="sheet-handle"></div><div id="sheet-content"></div></div></div>
+</div>
+<input type="file" id="cam" accept="image/*" capture="environment" hidden>
+<script src="../app/icons.js?v=31.0"></script>
+<script src="driver.js?v=31.0"></script>
+</body>
+</html>

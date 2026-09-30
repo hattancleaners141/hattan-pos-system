@@ -1,6 +1,7 @@
 // GET /.netlify/functions/app-data — everything the signed-in customer's app screens need,
 // limited to that customer's own record.
 import { env, handleError, json, methodNotAllowed } from './lib/shared.mjs';
+import { proofPublic, proofsFor } from './lib/delivery.mjs';
 import { REWARDS, SERVICES, SHOP, TAGS, TIME_WINDOWS, customerView, orderView, paidTransactions, readStore, requireAccount, siteUrl, vaultCard } from './lib/app.mjs';
 
 export const handler = async (event) => {
@@ -27,6 +28,9 @@ export const handler = async (event) => {
       .filter(o => !(o.legacy && o.done && !o.amountDue))
       .sort((a, b) => String(b.createdAt || b.pickupDate).localeCompare(String(a.createdAt || a.pickupDate)))
       .slice(0, 100);
+    // Delivery / pickup photo proof for the most recent delivery orders.
+    const withProof = orders.filter(o => o.channel === 'delivery' && ['delivered', 'picked_up', 'in_cleaning', 'ready', 'out_for_delivery'].includes(o.status)).slice(0, 5);
+    for (const o of withProof) { try { o.proofs = (await proofsFor([o.id], { kinds: ['delivery', 'pickup'], seconds: 3600, limit: 3 })).map(proofPublic); } catch (_) { o.proofs = []; } }
     const vault = await vaultCard(c.id);
     return json(200, {
       ok: true, ...base, customer: customerView(c), orders,
