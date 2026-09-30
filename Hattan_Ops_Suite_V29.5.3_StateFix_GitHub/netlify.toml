@@ -4,7 +4,7 @@
 # The shop's public email address is used as SMTP_USER. It appears on the website on
 # purpose, so it is not a secret — tell Netlify's secret scanner to skip it.
 [build.environment]
-  SECRETS_SCAN_OMIT_KEYS = "SMTP_USER"
+  SECRETS_SCAN_OMIT_KEYS = "SMTP_USER,CLOVER_APP_ID,CLOVER_RAID,CLOVER_DEVICE_ENVIRONMENT"
 
 [functions]
   directory = "netlify/functions"
@@ -27,7 +27,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     X-Frame-Options = "SAMEORIGIN"
     Permissions-Policy = "camera=(self), microphone=(self), geolocation=(self)"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.clover.com https://checkout.sandbox.dev.clover.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://checkout.clover.com https://checkout.sandbox.dev.clover.com; frame-src https://checkout.clover.com https://checkout.sandbox.dev.clover.com; font-src 'self' data:; base-uri 'self'; form-action 'self'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.clover.com https://checkout.sandbox.dev.clover.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://checkout.clover.com https://checkout.sandbox.dev.clover.com https://*.clover.com wss://*.clover.com; frame-src https://checkout.clover.com https://checkout.sandbox.dev.clover.com; font-src 'self' data:; base-uri 'self'; form-action 'self'"
 
 [[headers]]
   for = "/index.html"
