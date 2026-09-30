@@ -1,6 +1,11 @@
 [build]
   publish = "."
 
+# The shop's public email address is used as SMTP_USER. It appears on the website on
+# purpose, so it is not a secret — tell Netlify's secret scanner to skip it.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "SMTP_USER"
+
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
