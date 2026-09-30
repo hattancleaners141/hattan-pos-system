@@ -17,7 +17,7 @@
     const saved = read(); const u = ui();
     if (!Array.isArray(u.scanned)) u.scanned = [];
     if (saved && Array.isArray(saved.scanned) && saved.scanned.length && !u.scanned.length) u.scanned = saved.scanned.slice(0, 500);
-    if (saved && saved.driverId && !u.driverId) u.driverId = saved.driverId;
+    if (saved && saved.driverId && !u.driverId && (state.drivers || []).some(d => d.id === saved.driverId)) u.driverId = saved.driverId;
     last = current();
   }
   function persist() {
@@ -142,4 +142,57 @@
     if (typeof saveState === 'function') saveState();
     return result;
   };
+})();
+
+/* V32.2 — deliveries always reach a real driver.
+ * The "Send route to driver" menu could show one driver while the saved choice was an old demo driver,
+ * so manifests went out "Unassigned" and never reached a driver app. Now the choice is checked before
+ * sending, and any delivery stuck without a real driver shows in a "Needs a driver" card to fix in one tap. */
+(function () {
+  'use strict';
+  const E = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  const drivers = () => (state.drivers || []).filter(d => d && d.id);
+  const valid = id => drivers().some(d => d.id === id);
+  const fixChoice = () => { const u = state.deliveryUi || (state.deliveryUi = { input: '', scanned: [], driverId: '' }); if (!valid(u.driverId)) u.driverId = drivers()[0]?.id || ''; return u.driverId; };
+  const stuck = () => (state.orders || []).filter(o => o && (o.fulfillment === 'delivery' || o.channel === 'delivery') && o.driverRouteReady && !['delivered', 'voided', 'picked_up'].includes(o.status) && !valid(o.assignedDriverId));
+
+  if (typeof v8PrintDeliveryBatch === 'function') {
+    const basePrint = v8PrintDeliveryBatch;
+    v8PrintDeliveryBatch = function v32PrintDeliveryBatch() {
+      if (!fixChoice()) return toast('Add a driver on the Team screen first', false, 'alerttriangle');
+      return basePrint.apply(this, arguments);
+    };
+  }
+  window.v32SendStuck = () => {
+    const id = document.getElementById('v32-stuck-driver')?.value || fixChoice();
+    const d = drivers().find(x => x.id === id); if (!d) return toast('Choose a driver', false, 'alerttriangle');
+    const list = stuck(); if (!list.length) return;
+    const batches = new Set();
+    list.forEach(o => {
+      o.assignedDriverId = d.id; o.assignedDriverName = d.name; o.assignedAt = new Date().toISOString();
+      if (o.deliveryBatchId) batches.add(o.deliveryBatchId);
+      try { v8AddActivity(o, 'delivery_manifest', `Sent to ${d.name}'s driver app`, { driverId: d.id }); } catch (_) {}
+    });
+    (state.deliveryBatches || []).forEach(b => { if (batches.has(b.id) && !valid(b.driverId)) b.driverId = d.id; });
+    try { recordSync(`${list.length} deliver${list.length === 1 ? 'y' : 'ies'} sent to ${d.name}`); } catch (_) {}
+    saveState(); toast(`${list.length} deliver${list.length === 1 ? 'y' : 'ies'} now on ${d.name}'s driver app`, true, 'truck'); renderPosContent();
+  };
+  function card() {
+    const list = stuck(); if (!list.length) return '';
+    const pick = fixChoice();
+    return `<div class="pos-card v32-stuck"><h3 style="margin:0 0 4px">${icon('alerttriangle', 17)} Needs a driver · ${list.length} ticket${list.length === 1 ? '' : 's'}</h3>
+      <div class="v2-note">These were sent without a real driver, so no driver app shows them. Pick the driver and send.</div>
+      <div style="margin:8px 0">${list.map(o => `<div class="row-sub">#${E(o.ticket || o.id)} · ${E(customerLabel(o))}${o.deliveryBatchId ? ' · ' + E(o.deliveryBatchId) : ''}</div>`).join('')}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><select id="v32-stuck-driver" class="text-input" style="flex:1;min-width:200px">${drivers().map(d => `<option value="${E(d.id)}" ${d.id === pick ? 'selected' : ''}>${E(d.name)}</option>`).join('')}</select>
+      <button class="btn btn-primary" onclick="v32SendStuck()">${icon('truck', 15)} Send to driver app</button></div></div>`;
+  }
+  if (typeof renderPosDelivery === 'function') {
+    const baseRender = renderPosDelivery;
+    renderPosDelivery = function v32RenderDelivery(content) {
+      fixChoice();
+      const r = baseRender.apply(this, arguments);
+      try { const html = card(); if (html && content && !content.querySelector('.v32-stuck')) { const scan = content.querySelector('.v8-scan-box'); if (scan) scan.insertAdjacentHTML('beforebegin', html); else content.insertAdjacentHTML('afterbegin', html); } } catch (e) { console.error('V32 stuck', e); }
+      return r;
+    };
+  }
 })();

@@ -13,3 +13,5 @@
 .v32-fulfill-btns button{display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:10px;border:1.5px solid #d5dbd7;background:#fff;font-weight:800;font-size:14px;cursor:pointer;color:inherit}
 .v32-fulfill-btns button.sel{border-color:var(--brand,#163f36);background:var(--brand,#163f36);color:#fff;box-shadow:0 2px 6px rgba(22,63,54,.25)}
 .v32-fulfill-btns button.sel::after{content:" ✓"}
+/* V32.2 — deliveries without a real driver */
+.v32-stuck{border:2px solid #d99926;background:#fff8ec;margin-bottom:14px}

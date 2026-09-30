@@ -48,3 +48,11 @@ a.btn { text-decoration: none; }
 .bldg-unit.pickup .unit-apt { color: var(--gold); }
 .unit-go { color: var(--ink-tertiary, #8a9089); }
 .bldg-banner { display: flex; gap: 8px; align-items: flex-start; background: #eef7f3; border: 1px solid #cfe6da; color: #123d2b; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 13.5px; }
+/* V32.2 — separate Pickups / Deliveries sections */
+.section-title.sec-head { font-size: 15px; color: var(--ink-primary, #1b1f1c); border-bottom: 2px solid var(--hairline); padding-bottom: 6px; }
+.section-title.sec-head span:first-child { display: flex; align-items: center; gap: 7px; }
+.sec-count { min-width: 26px; height: 24px; padding: 0 8px; border-radius: 12px; background: var(--brand); color: #fff; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; }
+.sec-empty { color: var(--ink-secondary); font-size: 14px; padding: 6px 2px 4px; }
+.sec-empty.ok { display: flex; align-items: center; gap: 6px; color: var(--brand); font-weight: 700; margin-bottom: 8px; }
+.section-title.sec-alert { color: #b42318; justify-content: flex-start; gap: 6px; }
+.bldg-card.pickup { border-color: var(--gold); }

@@ -123,9 +123,9 @@
   function groups(list = stops()) {
     const out = [], byKey = new Map();
     for (const s of list) {
-      const k = bkey(s);
+      const k = bkey(s) ? `${s.kind}:${bkey(s)}` : '';
       if (k && byKey.has(k)) { byKey.get(k).stops.push(s); continue; }
-      const g = { key: k || 'solo:' + s.id, stops: [s] }; out.push(g); if (k) byKey.set(k, g);
+      const g = { key: k || `${s.kind}:solo:${s.id}`, kind: s.kind, stops: [s] }; out.push(g); if (k) byKey.set(k, g);
     }
     return out;
   }
@@ -144,30 +144,38 @@
     $('#h-back') && ($('#h-back').onclick = () => { S.stopId = null; renderRoute(); });
   }
   function renderRoute() {
-    const list = stops(), r = S.route || { stops: [], openPickups: [], done: [] };
-    const left = list.length, del = list.filter(s => s.kind === 'delivery');
+    const list = stops(), r = S.route || { stops: [], openPickups: [], openDeliveries: [], done: [] };
+    const openDel = r.openDeliveries || [], openPick = r.openPickups || [];
+    const pick = list.filter(s => s.kind === 'pickup'), del = list.filter(s => s.kind === 'delivery');
+    const left = list.length;
     const notOut = del.flatMap(s => s.orders).filter(o => o.status !== 'out_for_delivery').map(o => o.id);
-    const nb = groups(list).length;
-    $('#root').innerHTML = `${header(left ? `${left} stop${left === 1 ? '' : 's'} today${nb < left ? ` · ${nb} address${nb === 1 ? '' : 'es'}` : ''}` : 'No stops right now', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) + (r.done.length ? ` · ${r.done.length} done` : ''))}
+    const pg = groups(pick), dg = groups(del);
+    const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+    const cards = gs => gs.map((g, i) => g.stops.length > 1 ? buildingCard(g, i) : stopCard(g.stops[0], i, g.key)).join('');
+    const openCard = (s, kind) => `<div class="stop-card ${kind}"><div class="stop-num">${icon('plus', 16)}</div><div class="stop-body"><div class="stop-name">${esc(s.customer.name)}</div><div class="stop-addr">${esc(s.address?.text || 'No address')}</div><div class="stop-meta"><span class="pill ${kind === 'pickup' ? 'gold' : ''}">${kind === 'pickup' ? 'Pickup' : 'Delivery'}${s.window ? ' ' + esc(s.window) : ''}</span>${kind === 'delivery' ? `<span class="pill gray">${count(s.orders.length, 'ticket', 'tickets')}</span>` : ''}</div></div><button class="btn btn-sm btn-primary" data-claim="${esc(s.orders.map(o => o.id).join(','))}" data-claim-kind="${kind}">Take it</button></div>`;
+    $('#root').innerHTML = `${header(left ? `${count(left, 'stop', 'stops')} today` : 'No stops right now', [new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }), left ? `${count(pick.length, 'pickup', 'pickups')} · ${count(del.length, 'delivery', 'deliveries')}` : '', r.done.length ? `${r.done.length} done` : ''].filter(Boolean).join(' · '))}
       <main class="app-main" id="main">
-        ${left ? `<div class="big-actions"><a class="btn btn-primary" href="${routeUrl(list)}" target="_blank" rel="noopener">${icon('navigation', 16)} Open route in Maps</a>
-          ${notOut.length ? `<button class="btn btn-gold" id="b-start">${icon('truck', 16)} Start deliveries</button>` : `<button class="btn btn-secondary" disabled>${icon('checkcircle', 16)} Out for delivery</button>`}</div>` : ''}
-        ${groups(list).map((g, i) => g.stops.length > 1 ? buildingCard(g, i) : stopCard(g.stops[0], i, g.key)).join('') || `<div class="empty-order-card"><div class="quick-icon">${icon('truck', 22)}</div><h3>You're all caught up</h3><p>New stops appear here when the shop sends tickets to your route. Pull to refresh.</p></div>`}
-        ${r.openPickups.length ? `<div class="section-title">Open pickups — anyone can take</div>${r.openPickups.map(s => `<div class="stop-card pickup"><div class="stop-num">${icon('plus', 16)}</div><div class="stop-body"><div class="stop-name">${esc(s.customer.name)}</div><div class="stop-addr">${esc(s.address?.text || 'No address')}</div><div class="stop-meta"><span class="pill gold">Pickup ${esc(s.window || '')}</span></div></div><button class="btn btn-sm btn-primary" data-claim="${esc(s.orders.map(o => o.id).join(','))}">Take it</button></div>`).join('')}` : ''}
+        ${left ? `<div class="big-actions"><a class="btn btn-primary" href="${routeUrl([...pg, ...dg].flatMap(g => g.stops))}" target="_blank" rel="noopener">${icon('navigation', 16)} Open route in Maps</a></div>` : ''}
+        ${openDel.length ? `<div class="section-title sec-alert">${icon('alerttriangle', 14)} Deliveries with no driver — take them</div>${openDel.map(s => openCard(s, 'delivery')).join('')}` : ''}
+        <div class="section-title sec-head"><span>${icon('box', 15)} Pickups</span><span class="sec-count">${pick.length}</span></div>
+        ${pick.length ? cards(pg) : `<div class="sec-empty">No pickups assigned to you.</div>`}
+        ${openPick.length ? `<div class="section-title">Open pickups — anyone can take</div>${openPick.map(s => openCard(s, 'pickup')).join('')}` : ''}
+        <div class="section-title sec-head"><span>${icon('truck', 15)} Deliveries</span><span class="sec-count">${del.length}</span></div>
+        ${del.length ? `${notOut.length ? `<button class="btn btn-gold btn-block" id="b-start" style="margin-bottom:10px">${icon('truck', 16)} Start deliveries</button>` : `<div class="sec-empty ok">${icon('checkcircle', 14)} Out for delivery</div>`}${cards(dg)}` : `<div class="sec-empty">No deliveries assigned to you.</div>`}
         ${r.done.length ? `<div class="section-title">Done today</div><div class="card">${r.done.map(d => `<div class="list-row" style="cursor:default"><div class="row-icon">${icon(d.kind === 'delivery' ? 'checkcircle' : 'box', 17)}</div><div class="row-body"><div class="row-title">#${esc(d.ticket)} · ${esc(d.name)}</div><div class="row-sub">${d.kind === 'delivery' ? 'Delivered' : 'Picked up'} ${esc(time(d.at))}</div></div></div>`).join('')}</div>` : ''}
       </main>`;
     bindHeader();
     document.querySelectorAll('[data-stop]').forEach(el => el.onclick = e => { if (e.target.closest('.reorder')) return; S.stopId = el.dataset.stop; renderStop(); });
     // Moving a stop moves its whole building.
     document.querySelectorAll('[data-move]').forEach(b => b.onclick = e => {
-      e.stopPropagation(); const [key, d] = b.dataset.move.split('|');
-      const gs = groups(); const i = gs.findIndex(g => g.key === key), j = i + Number(d);
+      e.stopPropagation(); const m = b.dataset.move, cut = m.lastIndexOf('|'), key = m.slice(0, cut), d = m.slice(cut + 1), kind = key.split(':')[0];
+      const gs = groups(stops().filter(s => s.kind === kind)); const i = gs.findIndex(g => g.key === key), j = i + Number(d);
       if (i < 0 || j < 0 || j >= gs.length) return;
       [gs[i], gs[j]] = [gs[j], gs[i]];
       const ids = gs.flatMap(g => g.stops.map(s => s.id));
-      S.order = [...ids, ...S.order.filter(id => !ids.includes(id))]; saveOrder(); renderRoute();
+      S.order = [...S.order.filter(id => !ids.includes(id)), ...ids]; saveOrder(); renderRoute();
     });
-    document.querySelectorAll('[data-claim]').forEach(b => b.onclick = async () => { b.disabled = true; const res = await post('driver-route', { action: 'claim', orderIds: b.dataset.claim.split(',') }); if (!res.ok) { b.disabled = false; return toast(res.data.error || 'Could not take it', false); } toast('Pickup added to your route'); applyRoute(res.data); });
+    document.querySelectorAll('[data-claim]').forEach(b => b.onclick = async () => { b.disabled = true; const res = await post('driver-route', { action: 'claim', kind: b.dataset.claimKind, orderIds: b.dataset.claim.split(',') }); if (!res.ok) { b.disabled = false; return toast(res.data.error || 'Could not take it', false); } toast(b.dataset.claimKind === 'delivery' ? 'Delivery added to your route' : 'Pickup added to your route'); applyRoute(res.data); });
     $('#b-start') && ($('#b-start').onclick = async e => { e.currentTarget.disabled = true; const res = await post('driver-route', { action: 'start', orderIds: notOut }); if (!res.ok) { e.currentTarget.disabled = false; return toast(res.data.error || 'Could not start', false); } toast('Customers now see "Out for delivery"'); applyRoute(res.data); });
   }
   const reorderBtns = key => `<div class="reorder"><button data-move="${esc(key)}|-1" aria-label="Move up">${icon('chevronleft', 14)}</button><button data-move="${esc(key)}|1" aria-label="Move down">${icon('chevronright', 14)}</button></div>`;
@@ -175,7 +183,7 @@
     const first = g.stops[0], a = first.address || {};
     const nDel = g.stops.filter(s => s.kind === 'delivery').length, nPick = g.stops.length - nDel;
     const tickets = g.stops.reduce((t, s) => t + s.orders.length, 0);
-    return `<div class="bldg-card"><div class="bldg-head"><div class="stop-num">${i + 1}</div>
+    return `<div class="bldg-card ${g.kind || ''}"><div class="bldg-head"><div class="stop-num">${i + 1}</div>
         <div class="stop-body"><div class="stop-name">${icon('home', 15)} ${esc(a.street || 'Same building')}</div>
           <div class="stop-meta"><span class="pill">${g.stops.length} stops here</span>${nDel ? `<span class="pill gray">${nDel} deliver${nDel === 1 ? 'y' : 'ies'} · ${tickets} ticket${tickets === 1 ? '' : 's'}</span>` : ''}${nPick ? `<span class="pill gold">${nPick} pickup${nPick === 1 ? '' : 's'}</span>` : ''}${a.notes ? `<span class="pill gray">Note</span>` : ''}</div></div>
         ${reorderBtns(g.key)}</div>
@@ -195,7 +203,8 @@
       ${reorderBtns(key || 'solo:' + s.id)}</div>`;
   }
   function routeUrl(list) {
-    const addrs = groups(list).map(g => g.stops[0]).filter(s => s.address?.street).map(s => [s.address.street, s.address.city || 'New York', s.address.zip].filter(Boolean).join(', '));
+    const seen = new Set();
+    const addrs = list.filter(s => { const k = bkey(s) || s.id; if (seen.has(k)) return false; seen.add(k); return true; }).filter(s => s.address?.street).map(s => [s.address.street, s.address.city || 'New York', s.address.zip].filter(Boolean).join(', '));
     if (!addrs.length) return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(SHOP_ADDR);
     const dest = addrs[addrs.length - 1], way = addrs.slice(0, -1).slice(0, 9);
     return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SHOP_ADDR)}&destination=${encodeURIComponent(dest)}${way.length ? '&waypoints=' + encodeURIComponent(way.join('|')) : ''}&travelmode=driving`;
