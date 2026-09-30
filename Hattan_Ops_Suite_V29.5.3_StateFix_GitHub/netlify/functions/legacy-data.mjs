@@ -10,7 +10,8 @@ const FILES = {
   directory: 'legacy-v296/customer-directory.json',
   ...Object.fromEntries('0123456789abcdef'.split('').map(h => [`tickets-${h}`, `legacy-v294/tickets4y-${h}.json`])),
 };
-const here = path.dirname(fileURLToPath(import.meta.url));
+// Netlify bundles functions as CommonJS, where import.meta.url is empty — fall back safely.
+const here = (() => { try { return path.dirname(fileURLToPath(import.meta.url)); } catch (_) { return typeof __dirname !== 'undefined' ? __dirname : process.cwd(); } })();
 const roots = () => [
   process.cwd(),
   path.join(process.cwd(), 'Hattan_Ops_Suite_V29.5.3_StateFix_GitHub'),
