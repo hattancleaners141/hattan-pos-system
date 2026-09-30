@@ -112,6 +112,25 @@
     render();
   }
   const stops = () => (S.route?.stops || []).slice().sort((a, b) => S.order.indexOf(a.id) - S.order.indexOf(b.id));
+  // Same building = same street address, ignoring apartment, punctuation and spelling ("East 15th Street" = "E 15 St").
+  const WORDS = { east: 'e', west: 'w', north: 'n', south: 's', street: 'st', str: 'st', avenue: 'ave', av: 'ave', place: 'pl', road: 'rd', boulevard: 'blvd', drive: 'dr', lane: 'ln', square: 'sq' };
+  function bkey(s) {
+    let t = String(s?.address?.street || '').toLowerCase().replace(/\b(apt|apartment|unit|suite|ste|fl|floor|rm|room)\b.*$/, '').replace(/#.*$/, '');
+    t = t.replace(/[.,]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').map(w => WORDS[w] || w.replace(/^(\d+)(st|nd|rd|th)$/, '$1')).join(' ');
+    return t;
+  }
+  // Stops in route order, with every stop at the same building pulled together at the first one's spot.
+  function groups(list = stops()) {
+    const out = [], byKey = new Map();
+    for (const s of list) {
+      const k = bkey(s);
+      if (k && byKey.has(k)) { byKey.get(k).stops.push(s); continue; }
+      const g = { key: k || 'solo:' + s.id, stops: [s] }; out.push(g); if (k) byKey.set(k, g);
+    }
+    return out;
+  }
+  const sameBuilding = s => { const k = bkey(s); return k ? stops().filter(x => x.id !== s.id && bkey(x) === k) : []; };
+  const unitLabel = s => s.address?.apartment ? `Apt ${s.address.apartment}` : 'No apt';
   function render() { if (S.stopId && (S.route?.stops || []).some(s => s.id === S.stopId)) renderStop(); else { S.stopId = null; renderRoute(); } }
   function mapsQuery(a) { return encodeURIComponent([a.street, a.city || 'New York', a.state || 'NY', a.zip].filter(Boolean).join(', ')); }
   function header(title, sub, back) {
@@ -128,31 +147,55 @@
     const list = stops(), r = S.route || { stops: [], openPickups: [], done: [] };
     const left = list.length, del = list.filter(s => s.kind === 'delivery');
     const notOut = del.flatMap(s => s.orders).filter(o => o.status !== 'out_for_delivery').map(o => o.id);
-    $('#root').innerHTML = `${header(left ? `${left} stop${left === 1 ? '' : 's'} today` : 'No stops right now', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) + (r.done.length ? ` · ${r.done.length} done` : ''))}
+    const nb = groups(list).length;
+    $('#root').innerHTML = `${header(left ? `${left} stop${left === 1 ? '' : 's'} today${nb < left ? ` · ${nb} address${nb === 1 ? '' : 'es'}` : ''}` : 'No stops right now', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) + (r.done.length ? ` · ${r.done.length} done` : ''))}
       <main class="app-main" id="main">
         ${left ? `<div class="big-actions"><a class="btn btn-primary" href="${routeUrl(list)}" target="_blank" rel="noopener">${icon('navigation', 16)} Open route in Maps</a>
           ${notOut.length ? `<button class="btn btn-gold" id="b-start">${icon('truck', 16)} Start deliveries</button>` : `<button class="btn btn-secondary" disabled>${icon('checkcircle', 16)} Out for delivery</button>`}</div>` : ''}
-        ${list.map((s, i) => stopCard(s, i)).join('') || `<div class="empty-order-card"><div class="quick-icon">${icon('truck', 22)}</div><h3>You're all caught up</h3><p>New stops appear here when the shop sends tickets to your route. Pull to refresh.</p></div>`}
+        ${groups(list).map((g, i) => g.stops.length > 1 ? buildingCard(g, i) : stopCard(g.stops[0], i, g.key)).join('') || `<div class="empty-order-card"><div class="quick-icon">${icon('truck', 22)}</div><h3>You're all caught up</h3><p>New stops appear here when the shop sends tickets to your route. Pull to refresh.</p></div>`}
         ${r.openPickups.length ? `<div class="section-title">Open pickups — anyone can take</div>${r.openPickups.map(s => `<div class="stop-card pickup"><div class="stop-num">${icon('plus', 16)}</div><div class="stop-body"><div class="stop-name">${esc(s.customer.name)}</div><div class="stop-addr">${esc(s.address?.text || 'No address')}</div><div class="stop-meta"><span class="pill gold">Pickup ${esc(s.window || '')}</span></div></div><button class="btn btn-sm btn-primary" data-claim="${esc(s.orders.map(o => o.id).join(','))}">Take it</button></div>`).join('')}` : ''}
         ${r.done.length ? `<div class="section-title">Done today</div><div class="card">${r.done.map(d => `<div class="list-row" style="cursor:default"><div class="row-icon">${icon(d.kind === 'delivery' ? 'checkcircle' : 'box', 17)}</div><div class="row-body"><div class="row-title">#${esc(d.ticket)} · ${esc(d.name)}</div><div class="row-sub">${d.kind === 'delivery' ? 'Delivered' : 'Picked up'} ${esc(time(d.at))}</div></div></div>`).join('')}</div>` : ''}
       </main>`;
     bindHeader();
     document.querySelectorAll('[data-stop]').forEach(el => el.onclick = e => { if (e.target.closest('.reorder')) return; S.stopId = el.dataset.stop; renderStop(); });
-    document.querySelectorAll('[data-move]').forEach(b => b.onclick = e => { e.stopPropagation(); const [id, d] = b.dataset.move.split('|'); const i = S.order.indexOf(id), j = i + Number(d); if (j < 0 || j >= S.order.length) return; [S.order[i], S.order[j]] = [S.order[j], S.order[i]]; saveOrder(); renderRoute(); });
+    // Moving a stop moves its whole building.
+    document.querySelectorAll('[data-move]').forEach(b => b.onclick = e => {
+      e.stopPropagation(); const [key, d] = b.dataset.move.split('|');
+      const gs = groups(); const i = gs.findIndex(g => g.key === key), j = i + Number(d);
+      if (i < 0 || j < 0 || j >= gs.length) return;
+      [gs[i], gs[j]] = [gs[j], gs[i]];
+      const ids = gs.flatMap(g => g.stops.map(s => s.id));
+      S.order = [...ids, ...S.order.filter(id => !ids.includes(id))]; saveOrder(); renderRoute();
+    });
     document.querySelectorAll('[data-claim]').forEach(b => b.onclick = async () => { b.disabled = true; const res = await post('driver-route', { action: 'claim', orderIds: b.dataset.claim.split(',') }); if (!res.ok) { b.disabled = false; return toast(res.data.error || 'Could not take it', false); } toast('Pickup added to your route'); applyRoute(res.data); });
     $('#b-start') && ($('#b-start').onclick = async e => { e.currentTarget.disabled = true; const res = await post('driver-route', { action: 'start', orderIds: notOut }); if (!res.ok) { e.currentTarget.disabled = false; return toast(res.data.error || 'Could not start', false); } toast('Customers now see "Out for delivery"'); applyRoute(res.data); });
   }
-  function stopCard(s, i) {
+  const reorderBtns = key => `<div class="reorder"><button data-move="${esc(key)}|-1" aria-label="Move up">${icon('chevronleft', 14)}</button><button data-move="${esc(key)}|1" aria-label="Move down">${icon('chevronright', 14)}</button></div>`;
+  function buildingCard(g, i) {
+    const first = g.stops[0], a = first.address || {};
+    const nDel = g.stops.filter(s => s.kind === 'delivery').length, nPick = g.stops.length - nDel;
+    const tickets = g.stops.reduce((t, s) => t + s.orders.length, 0);
+    return `<div class="bldg-card"><div class="bldg-head"><div class="stop-num">${i + 1}</div>
+        <div class="stop-body"><div class="stop-name">${icon('home', 15)} ${esc(a.street || 'Same building')}</div>
+          <div class="stop-meta"><span class="pill">${g.stops.length} stops here</span>${nDel ? `<span class="pill gray">${nDel} deliver${nDel === 1 ? 'y' : 'ies'} · ${tickets} ticket${tickets === 1 ? '' : 's'}</span>` : ''}${nPick ? `<span class="pill gold">${nPick} pickup${nPick === 1 ? '' : 's'}</span>` : ''}${a.notes ? `<span class="pill gray">Note</span>` : ''}</div></div>
+        ${reorderBtns(g.key)}</div>
+      ${g.stops.map(s => { const w = S.work[s.id] || {}; const sc = s.kind === 'delivery' ? s.orders.filter(o => o.codes.some(c => (w.scanned || []).includes(c))).length : 0;
+        return `<div class="bldg-unit ${s.kind}" data-stop="${esc(s.id)}" role="button" tabindex="0"><div class="unit-apt">${esc(unitLabel(s))}</div>
+          <div class="stop-body"><div class="stop-name">${esc(s.customer.name)}</div><div class="stop-meta"><span class="pill ${s.kind === 'pickup' ? 'gold' : ''}">${s.kind === 'pickup' ? 'Pickup' : 'Delivery'}</span>${s.kind === 'delivery' ? `<span class="pill gray">${sc}/${s.orders.length} scanned</span>` : ''}${(w.photos || []).length ? `<span class="pill gray">${w.photos.length} photo${w.photos.length === 1 ? '' : 's'}</span>` : ''}${s.orders.some(o => o.rush) ? '<span class="pill red">RUSH</span>' : ''}</div></div>
+          <div class="unit-go">${icon('chevronright', 16)}</div></div>`; }).join('')}
+    </div>`;
+  }
+  function stopCard(s, i, key) {
     const w = S.work[s.id] || {};
     const scanned = s.kind === 'delivery' ? s.orders.filter(o => o.codes.some(c => (w.scanned || []).includes(c))).length : 0;
     return `<div class="stop-card ${s.kind}" data-stop="${esc(s.id)}" role="button" tabindex="0"><div class="stop-num">${i + 1}</div>
       <div class="stop-body"><div class="stop-name">${esc(s.customer.name)}</div><div class="stop-addr">${esc(s.address?.text || 'No address on file')}</div>
         <div class="stop-meta"><span class="pill ${s.kind === 'pickup' ? 'gold' : ''}">${s.kind === 'pickup' ? 'Pickup' : 'Delivery'}</span>${s.window ? `<span class="pill gray">${esc(s.window)}</span>` : ''}
         ${s.kind === 'delivery' ? `<span class="pill gray">${scanned}/${s.orders.length} scanned</span>` : ''}${(w.photos || []).length ? `<span class="pill gray">${w.photos.length} photo${w.photos.length === 1 ? '' : 's'}</span>` : ''}${s.orders.some(o => o.rush) ? '<span class="pill red">RUSH</span>' : ''}</div></div>
-      <div class="reorder"><button data-move="${esc(s.id)}|-1" aria-label="Move up">${icon('chevronleft', 14)}</button><button data-move="${esc(s.id)}|1" aria-label="Move down">${icon('chevronright', 14)}</button></div></div>`;
+      ${reorderBtns(key || 'solo:' + s.id)}</div>`;
   }
   function routeUrl(list) {
-    const addrs = list.filter(s => s.address?.street).map(s => [s.address.street, s.address.city || 'New York', s.address.zip].filter(Boolean).join(', '));
+    const addrs = groups(list).map(g => g.stops[0]).filter(s => s.address?.street).map(s => [s.address.street, s.address.city || 'New York', s.address.zip].filter(Boolean).join(', '));
     if (!addrs.length) return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(SHOP_ADDR);
     const dest = addrs[addrs.length - 1], way = addrs.slice(0, -1).slice(0, 9);
     return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SHOP_ADDR)}&destination=${encodeURIComponent(dest)}${way.length ? '&waypoints=' + encodeURIComponent(way.join('|')) : ''}&travelmode=driving`;
@@ -166,8 +209,10 @@
     const photosOk = w.photos.length > 0;
     const due = s.orders.reduce((t, o) => t + (o.paid ? 0 : o.amountDue), 0);
     const ready = allScanned && photosOk && (!isDel || w.method);
-    $('#root').innerHTML = `${header(esc(s.customer.name), `${isDel ? 'Delivery' : 'Pickup'}${s.window ? ' · ' + esc(s.window) : ''}`, true)}
+    $('#root').innerHTML = `${header(esc(s.customer.name), `${isDel ? 'Delivery' : 'Pickup'}${a.apartment ? ' · Apt ' + esc(a.apartment) : ''}${s.window ? ' · ' + esc(s.window) : ''}`, true)}
       <main class="app-main" id="main">
+        ${(() => { const here = sameBuilding(s); return here.length ? `<div class="bldg-banner">${icon('home', 15)} <span><strong>${here.length} more stop${here.length === 1 ? '' : 's'} at this building</strong> — scan any of their tickets here and they're saved to the right apartment.</span></div>
+          <div class="chip-row" style="margin-bottom:12px">${here.map(x => `<div class="chip" data-go="${esc(x.id)}">${esc(unitLabel(x))} · ${esc(x.customer.name.split(' ')[0])}${x.kind === 'pickup' ? ' (pickup)' : ''}</div>`).join('')}</div>` : ''; })()}
         <div class="card"><div class="row-title">${esc(a.street || 'No address')}${a.apartment ? ', Apt ' + esc(a.apartment) : ''}</div><div class="row-sub">${esc([a.city, a.zip].filter(Boolean).join(' '))}</div>
           ${a.notes ? `<div class="warn-banner" style="margin-top:10px"><span class="ic">${icon('alerttriangle', 15)}</span><span>${esc(a.notes)}</span></div>` : ''}
           <div class="big-actions" style="margin-bottom:0"><a class="btn btn-primary" href="https://www.google.com/maps/dir/?api=1&destination=${mapsQuery(a)}&travelmode=driving" target="_blank" rel="noopener">${icon('navigation', 16)} Navigate</a>
@@ -195,6 +240,7 @@
           ${!allScanned ? `<button class="link-btn" id="b-override" style="width:100%;justify-content:center">Barcode won't scan?</button>` : ''}` : ''}
       </main>`;
     bindHeader();
+    document.querySelectorAll('[data-go]').forEach(el => el.onclick = () => { S.stopId = el.dataset.go; renderStop(); window.scrollTo(0, 0); });
     $('#b-scan') && ($('#b-scan').onclick = () => openScanner(s));
     $('#b-type') && ($('#b-type').onclick = () => typeCode(s));
     document.querySelectorAll('[data-m]').forEach(el => el.onclick = () => { w.method = el.dataset.m; saveWork(); renderStop(); });
@@ -226,6 +272,12 @@
       saveWork(); vibrate(40); toast(`✓ #${hit.ticket} scanned`); return true;
     }
     const other = (S.route.stops || []).find(x => x.id !== s.id && x.orders.some(o => o.codes.some(c => vars.includes(c))));
+    if (other && other.kind === 'delivery' && bkey(other) && bkey(other) === bkey(s)) {
+      const ow = work(other), o = other.orders.find(o => o.codes.some(c => vars.includes(c)));
+      const code = o.codes.find(c => vars.includes(c)) || vars[0];
+      if (!ow.scanned.includes(code)) ow.scanned.push(code);
+      saveWork(); vibrate(40); toast(`✓ #${o.ticket} — saved to ${unitLabel(other)} (${other.customer.name})`); return 'other';
+    }
     vibrate([80, 60, 80]);
     toast(other ? `Wrong stop — that ticket is for ${other.customer.name}` : `${raw} is not on this stop`, false);
     return false;
@@ -239,7 +291,8 @@
   async function openScanner(s) {
     openSheet(`<h3>Scan tickets</h3><p class="sheet-sub">Point the camera at each ticket's barcode.</p><div id="reader"></div>
       <div id="scan-list" class="helper-text" style="margin-top:10px"></div><button class="btn btn-primary btn-block" id="scan-done" style="margin-top:12px">Done</button>`);
-    const upd = () => { const w = work(s); const el = $('#scan-list'); if (el) el.innerHTML = s.orders.map(o => `${o.codes.some(c => w.scanned.includes(c)) ? '✅' : '⬜️'} #${esc(o.ticket)}`).join(' &nbsp; '); };
+    const upd = () => { const el = $('#scan-list'); if (!el) return; const all = [s, ...sameBuilding(s).filter(x => x.kind === 'delivery')];
+      el.innerHTML = all.map(x => { const w = work(x); return `${all.length > 1 ? `<strong>${esc(unitLabel(x))}</strong> ` : ''}${x.orders.map(o => `${o.codes.some(c => w.scanned.includes(c)) ? '✅' : '⬜️'} #${esc(o.ticket)}`).join(' &nbsp; ')}`; }).join('<br>'); };
     upd();
     $('#scan-done').onclick = () => { closeSheet(); renderStop(); };
     try {
@@ -248,7 +301,8 @@
       scanner = new window.Html5Qrcode('reader', { formatsToSupport: [F.CODE_128, F.CODE_39, F.QR_CODE, F.EAN_13], useBarCodeDetectorIfSupported: true, verbose: false });
       await scanner.start({ facingMode: 'environment' }, { fps: 12, qrbox: (w, h) => ({ width: Math.floor(w * 0.9), height: Math.floor(Math.min(h, w) * 0.45) }) }, text => {
         const now = Date.now(); if (text === lastCode && now - lastAt < 2500) return; lastCode = text; lastAt = now;
-        if (acceptCode(s, text)) { upd(); const r = $('#reader'); r && r.classList.add('scan-flash'); setTimeout(() => r && r.classList.remove('scan-flash'), 500);
+        const hit = acceptCode(s, text); if (hit === 'other') { upd(); return; }
+        if (hit) { upd(); const r = $('#reader'); r && r.classList.add('scan-flash'); setTimeout(() => r && r.classList.remove('scan-flash'), 500);
           const w = work(s); if (s.orders.every(o => o.codes.some(c => w.scanned.includes(c)))) { toast('All tickets scanned'); setTimeout(() => { closeSheet(); renderStop(); }, 600); } }
       }, () => {});
     } catch (e) {
@@ -259,7 +313,7 @@
     openSheet(`<h3>Type the ticket number</h3><p class="sheet-sub">The number under the barcode, e.g. HAT-000482 or 482.</p>
       <input class="text-input" id="tc" inputmode="text" autocapitalize="characters" placeholder="Ticket number"><button class="btn btn-primary btn-block" id="tc-ok" style="margin-top:12px">Check</button>`);
     setTimeout(() => $('#tc')?.focus(), 50);
-    $('#tc-ok').onclick = () => { const v = $('#tc').value.trim(); if (!v) return; if (acceptCode(s, v)) { closeSheet(); renderStop(); } };
+    $('#tc-ok').onclick = () => { const v = $('#tc').value.trim(); if (!v) return; const hit = acceptCode(s, v); if (hit === 'other') { $('#tc').value = ''; return; } if (hit) { closeSheet(); renderStop(); } };
   }
   function overrideSheet(s) {
     openSheet(`<h3>Barcode won't scan?</h3><p class="sheet-sub">First try "Type number". If the ticket is missing or unreadable, explain — the shop sees this note with the delivery.</p>
@@ -311,11 +365,12 @@
   async function complete(s, kind, extra = {}) {
     const w = work(s);
     const job = { id: Math.random().toString(36).slice(2), stopId: s.id, kind, orderIds: s.orders.map(o => o.id), photoIds: w.photos.map(p => p.id), photos: w.photos.map(p => p.path), scanned: w.scanned, method: w.method, recipient: w.recipient, note: w.note, bags: kind === 'pickup' ? w.bags : null, scanOverride: w.scanOverride || '', gps: w.gps || null, name: s.customer.name, ...extra };
+    const next = sameBuilding(s)[0];
     S.outbox.push(job); saveOutbox();
     S.route.stops = S.route.stops.filter(x => x.id !== s.id); kvSet('route', S.route);
     delete S.work[s.id]; saveWork();
-    S.stopId = null; renderRoute();
-    toast(kind === 'attempt' ? 'Attempt recorded' : `${kind === 'delivery' ? 'Delivered' : 'Picked up'} — ${s.customer.name}`);
+    if (next) { S.stopId = next.id; renderStop(); window.scrollTo(0, 0); } else { S.stopId = null; renderRoute(); }
+    toast(`${kind === 'attempt' ? 'Attempt recorded' : `${kind === 'delivery' ? 'Delivered' : 'Picked up'} — ${s.customer.name}`}${next ? ` · next here: ${unitLabel(next)}` : ''}`);
     flushOutbox();
   }
   async function flushOutbox() {

@@ -6,6 +6,10 @@ const SHARED_KEYS = new Set([
   'customerMemos', 'interfaceSettings', 'garmentCatalog', 'materials',
   'nextConveyorNumber', 'deliveryBatches', 'nextDeliveryBatch',
   'nextCustomerNumber', 'hardwareProfile', 'v14InstructionOrder',
+  // Keys the POS added later (v17/v21/v25). Before V32 the server silently dropped these, so every
+  // counter thought it had unsaved changes and re-sent the whole state after each update.
+  'workflowSettings', 'instructionTranslations', 'legacyImports', 'dailyRevenue',
+  'recentCustomerViews', 'legacyRevenueHistory', 'migrationAudit',
 ]);
 
 function stripSecrets(value, depth = 0) {
