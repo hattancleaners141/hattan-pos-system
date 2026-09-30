@@ -196,3 +196,102 @@
     };
   }
 })();
+
+/* V32.3 — printed ticket clean-up
+ * - Chinese only on Wash & Fold tickets (for the laundry team's special directions), never on other tickets.
+ * - Totals: no Tax / Sub.T / G.Total clutter — just the total or balance; PrePay only for a partial prepayment;
+ *   the 3% cash/check price only when the customer is paying cash/check.
+ * - CleanBase addresses keep the apartment in line2 — read it, so the big apartment number prints on top. */
+(function () {
+  'use strict';
+  const E = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  const unitOf = a => String(a?.apartment || a?.apt || a?.unit || a?.line2 || '').replace(/^(?:apt\.?|apartment|unit|#)\s*/i, '').trim();
+
+  // 1) addresses: street/apartment from line1/line2
+  if (typeof v8AddressForOrder === 'function') {
+    const baseAddr = v8AddressForOrder;
+    const w = function v32AddressForOrder() {
+      const a = baseAddr.apply(this, arguments);
+      if (!a || typeof a !== 'object') return a;
+      const apt = unitOf(a);
+      if ((a.street || !a.line1) && (a.apartment || !apt)) return a;
+      const out = { ...a, street: a.street || a.line1 || '', apartment: apt };
+      if (apt && String(a.line2 || '').replace(/^(?:apt\.?|apartment|unit|#)\s*/i, '').trim() === apt) delete out.line2;
+      return out;
+    };
+    window.v8AddressForOrder = w; try { v8AddressForOrder = w; } catch (_) {}
+  }
+
+  // 2) Wash & Fold directions in Chinese
+  const WF_ZH = [
+    [/separate|darks?\s*(?:&|and|\/)\s*whites?|sort\s+colou?rs?/i, '深色与白色分开'], [/low\s*(?:heat|dry)|delicate\s+dry/i, '低温烘干'],
+    [/no\s+(?:fabric\s+)?softener/i, '不使用柔顺剂'], [/own\s+(?:soap|detergent)|customer'?s?\s+(?:soap|detergent)|provided\s+detergent/i, '使用客户自带洗衣液'],
+    [/hang\s*(?:dry|to\s+dry)|air\s*dry/i, '悬挂晾干'], [/fragrance[- ]?free|unscented|hypo/i, '无香洗衣液'],
+    [/cold\s+(?:wash|water)/i, '冷水洗'], [/no\s+bleach/i, '不要漂白'], [/bleach\s+whites?/i, '白色衣物可漂白'],
+    [/no\s+dry(?:er)?\b|do\s+not\s+dry/i, '不要烘干'], [/fold\s+only/i, '只折叠'], [/black\s+bag/i, '黑色洗衣袋'], [/white\s+bag/i, '白色洗衣袋'],
+  ];
+  const zhFor = text => { const out = []; WF_ZH.forEach(([re, zh]) => { if (re.test(String(text || '')) && !out.includes(zh)) out.push(zh); }); return out.join(' · '); };
+  const serviceOf = o => { try { return v8OrderService(o); } catch (_) { return o?.serviceType || ''; } };
+
+  // 3) totals
+  function totalsRows(order) {
+    const subtotal = Number(order.subtotal ?? order.total ?? 0), fee = Number(order.surcharge || 0), tax = Number(order.tax || 0), cashDisc = Number(order.cashDiscount || 0);
+    const grand = subtotal + fee + tax - cashDisc;
+    const credit = Number(order.storeCreditApplied || 0);
+    const prepaid = Math.min(grand, Math.max(0, Number(order.amountCharged ?? (order.paid ? grand : 0)) || 0));
+    const balance = Math.max(0, grand - prepaid);
+    const row = (label, value, big) => `<div class="rt-row${big ? ' rt-total' : ''}"><span>${label}</span><strong>${value}</strong></div>`;
+    const rows = [];
+    if (fee || cashDisc || tax) {
+      rows.push(row('Subtotal', money(subtotal)));
+      if (fee) rows.push(row('Card Fee 3%', money(fee)));
+      if (cashDisc) rows.push(row('Cash Discount 3%', '-' + money(cashDisc)));
+      if (tax) rows.push(row('Tax', money(tax)));
+    }
+    const payingCash = /cash|check/i.test(String(order.paymentMethod || order.intendedPaymentMethod || order.payLaterMethod || ''));
+    const cardPriced = !!(window.hcPricing && hcPricing.cardPriced && hcPricing.cardPriced(order));
+    const cashLine = cardPriced && payingCash && balance > 0.004 && order.cashPrice != null ? row('Cash / check price (3% off)', money(Math.max(0, Number(order.cashPrice) - Number(order.discount || 0) - prepaid))) : '';
+    if (balance < 0.005) {
+      rows.push(row('Total', money(grand), true)); rows.push(row('PAID', money(grand)));
+    } else if (prepaid > 0.004) {
+      rows.push(row('Total', money(grand)));
+      if (credit > 0.004) rows.push(row('Store Credit', '−' + money(Math.min(credit, prepaid))));
+      if (prepaid - credit > 0.004) rows.push(row('PrePay', money(prepaid - credit)));
+      rows.push(row('Balance', money(balance), true)); if (cashLine) rows.push(cashLine);
+    } else {
+      rows.push(row('Balance', money(balance), true)); if (cashLine) rows.push(cashLine);
+    }
+    return rows.join('');
+  }
+
+  const prev = (typeof window.receiptTicketHTML === 'function') ? window.receiptTicketHTML : (typeof receiptTicketHTML === 'function' ? receiptTicketHTML : null);
+  if (!prev) return;
+  function v32Receipt(order) {
+    let html = prev.apply(this, arguments);
+    if (!order || typeof html !== 'string') return html;
+    try {
+      const wf = serviceOf(order) === 'washfold';
+      // Chinese: drop from every item line; Wash & Fold gets one Chinese line for its directions.
+      html = html.replace(/<span class="v17-zh-line">[\s\S]*?<\/span>/g, '');
+      if (wf) {
+        const text = [order.notes, ...(order.lineItems || []).map(l => [l.garmentNote, l.instructions, (typeof v8LinePrintDescription === 'function' ? v8LinePrintDescription(l).detail : '')].join(' ')), ...(order.instructions || [])].join(' · ');
+        const zh = zhFor(text);
+        if (zh) {
+          const block = `<div class="v32-wf-zh"><span>洗衣房说明</span>${E(zh)}</div>`;
+          const notesAt = html.indexOf('<div class="v11-notes">');
+          if (notesAt >= 0) { const end = html.indexOf('</div>', notesAt) + 6; html = html.slice(0, end) + block + html.slice(end); }
+          else { const at = html.indexOf('<div class="rt-hr"></div><div class="v11-totals">'); if (at >= 0) html = html.slice(0, at) + block + html.slice(at); }
+        }
+      }
+      // Totals
+      const start = html.indexOf('<div class="v11-totals">'), end = html.indexOf('<div class="v11-hours">');
+      if (start >= 0 && end > start) {
+        const piece = (/<div class="v11-piece-count">[\s\S]*?<\/div>/.exec(html.slice(start, end)) || [''])[0];
+        html = html.slice(0, start) + `<div class="v11-totals">${piece}<div>${totalsRows(order)}</div></div>` + html.slice(end);
+      }
+    } catch (e) { console.error('V32 ticket', e); }
+    return html;
+  }
+  window.receiptTicketHTML = v32Receipt;
+  try { receiptTicketHTML = v32Receipt; } catch (_) {}
+})();

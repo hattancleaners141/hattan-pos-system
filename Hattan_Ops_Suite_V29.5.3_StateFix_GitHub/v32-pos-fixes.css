@@ -15,3 +15,6 @@
 .v32-fulfill-btns button.sel::after{content:" ✓"}
 /* V32.2 — deliveries without a real driver */
 .v32-stuck{border:2px solid #d99926;background:#fff8ec;margin-bottom:14px}
+/* V32.3 — Wash & Fold directions for the laundry team */
+.v32-wf-zh{margin:6px 0;padding:6px 8px;border:2px solid #000;font-size:15px;font-weight:900;line-height:1.35}
+.v32-wf-zh span{display:block;font-size:11px;font-weight:800}
