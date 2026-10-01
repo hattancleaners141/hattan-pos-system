@@ -53,3 +53,12 @@
 .v34-tag{font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;color:#fff}
 .v34-tag.live{background:#0a7a0a}.v34-tag.test{background:#b54708}.v34-tag.off{background:#667085}
 @media (max-width:900px){.v34-grid{grid-template-columns:1fr}}
+/* V35 — garment pictures */
+.v35-garment-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.v35-garment-pic{display:block;color:var(--brand,#163f36);line-height:0}
+.v282-grid button[onclick="v282More()"]{display:none}
+.v13-tile-ic .v35-garment-svg{color:var(--brand,#163f36)}
+
+/* V35 texting setup check */
+.v34-setup{margin-top:12px;padding:10px 12px;border:1px solid var(--line,#e3e7e5);border-radius:10px;background:var(--surface-2,#f7f9f8)}
+.v34-setup h4{margin:0 0 6px}.v34-setup ul{margin:0 0 8px;padding-left:4px;list-style:none}.v34-setup li{margin:3px 0}

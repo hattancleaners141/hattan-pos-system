@@ -164,6 +164,9 @@ export function compose(kind, ctx) {
     case 'notice':
       msg = String(text || '');
       break;
+    case 'test':
+      msg = 'Test text from the POS. Texting is working.';
+      break;
     default:
       throw new HttpError(400, 'Unknown text type');
   }
@@ -248,8 +251,15 @@ export async function deliver({ keys, kind, customer, orderIds = [], body, sentB
   if (!consent.ok) return { ok: true, skipped: consent.reason, optedOut: !!consent.optedOut };
   if (mode === 'test' && !testNumbers().includes(consent.phone)) return { ok: true, skipped: 'Test mode: number not on the test list' };
   const base = { kind, customer_id: String(customer.id || ''), order_ids: orderIds.join(','), to_phone: consent.phone, sent_by: sentBy || null };
-  const first = await claim(keys[0], { ...base, body });
-  if (!first) return { ok: true, skipped: 'Already sent', duplicate: true };
+  let first = await claim(keys[0], { ...base, body });
+  if (!first) {
+    // A text that FAILED before (e.g. Twilio not fully set up yet) may be retried; a sent one never repeats.
+    const prev = (await selectRows('sms_log', `store_id=eq.${encodeURIComponent(storeId())}&dedupe_key=eq.${encodeURIComponent(keys[0])}&limit=1`, 'id,status'))?.[0];
+    if (!prev || prev.status !== 'failed') return { ok: true, skipped: 'Already sent', duplicate: true };
+    const upd = await supabaseRest(`sms_log?id=eq.${encodeURIComponent(prev.id)}&status=eq.failed`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ ...base, body, status: 'claimed', error_message: null }) });
+    first = upd?.[0];
+    if (!first) return { ok: true, skipped: 'Already sent', duplicate: true };
+  }
   for (const k of keys.slice(1)) { try { const r = await claim(k, { ...base, body: null }); if (r) await logUpdate(r.id, { status: 'merged' }); } catch (_) { /* best effort */ } }
   const sent = await twilioSend(consent.phone, body, event);
   if (!sent.ok) {

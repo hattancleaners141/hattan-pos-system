@@ -3,7 +3,7 @@
 // shared store data, checks consent/opt-out, checks the ticket really is in that state, writes
 // the message itself, and refuses duplicates.
 import { assertSameOrigin, handleError, json, methodNotAllowed, parseBody, requireSession, selectRows, storeId, HttpError } from './lib/shared.mjs';
-import { KINDS, ascii, compose, deliver, e164, loadStore, receiptUrl, siteUrl, smsMode, smsSettings, baseDue } from './lib/sms.mjs';
+import { KINDS, ascii, compose, deliver, e164, loadStore, logInsert, receiptUrl, siteUrl, smsMode, smsSettings, baseDue, testNumbers, twilioConfigured, twilioSend } from './lib/sms.mjs';
 
 const nyDay = (d = Date.now()) => new Date(d).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 const inList = ids => `(${ids.map(i => `"${String(i).replace(/"/g, '')}"`).join(',')})`;
@@ -26,6 +26,21 @@ export const handler = async (event) => {
     assertSameOrigin(event);
     const body = parseBody(event);
     const kind = String(body.kind || '');
+    // ---- manager test text: straight to Twilio, returns Twilio's own error so setup problems are visible ----
+    if (kind === 'test') {
+      const session = requireSession(event, true);
+      const mode = smsMode();
+      if (mode === 'off') throw new HttpError(409, 'SMS_MODE is off in Netlify — set it to test (or live) and redeploy');
+      if (!twilioConfigured()) throw new HttpError(409, 'Twilio settings are missing in Netlify (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_MESSAGING_SERVICE_SID) — add them and redeploy');
+      const to = e164(body.phone);
+      if (!to) throw new HttpError(400, 'Enter a 10-digit US mobile number');
+      if (mode === 'test' && !testNumbers().includes(to)) throw new HttpError(409, `SMS_MODE is test and ${to} is not in SMS_TEST_NUMBERS — add it in Netlify and redeploy`);
+      const msg = compose('test', {});
+      const sent = await twilioSend(to, msg, event);
+      try { await logInsert({ direction: 'out', kind: 'test', to_phone: to, body: msg, status: sent.ok ? (sent.status || 'queued') : 'failed', twilio_sid: sent.sid || null, error_message: sent.ok ? null : String(sent.error || '').slice(0, 300), sent_by: session.sub, dedupe_key: `test:${Date.now()}` }); } catch (_) {}
+      if (!sent.ok) return json(200, { ok: false, error: `Twilio said: ${sent.error}${sent.code ? ` (code ${sent.code})` : ''}`, code: sent.code });
+      return json(200, { ok: true, sent: true, sid: sent.sid, status: sent.status, to: to.slice(-4) });
+    }
     if (!KINDS.includes(kind)) throw new HttpError(400, 'Unknown text type');
     const session = requireSession(event, kind === 'notice');
     if (smsMode() === 'off') return json(200, { ok: true, skipped: 'Texting is off (SMS_MODE)' });
