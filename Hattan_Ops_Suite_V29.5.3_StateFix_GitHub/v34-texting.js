@@ -36,6 +36,21 @@
     return r;
   }
 
+  // Plain-English reason a text did not go out.
+  function why(r) {
+    if (!r) return 'no answer from the server';
+    if (r.networkError || r.status === 0) return 'no internet connection';
+    if (r.status === 404) return 'the texting functions are not deployed yet (redeploy Netlify)';
+    const d = r.data || {};
+    if (d.error) return d.error;
+    const reason = d.skipped || (r.ok ? '' : `server error ${r.status}`);
+    if (/not on the test list/i.test(reason)) return 'Test mode is on and this number is not in SMS_TEST_NUMBERS in Netlify';
+    if (/SMS_MODE/i.test(reason)) return 'SMS_MODE is off in Netlify — set it to test or live, then redeploy';
+    if (/Twilio is not set up/i.test(reason)) return 'Twilio settings are missing in Netlify — add them, then redeploy';
+    return reason || 'unknown reason';
+  }
+  T.why = why;
+
   /* ---------------- 1. consent ---------------- */
   const QUESTION = 'Would you like order updates from Hattan Cleaners by text at this number? That includes when your order is ready, receipts, card charges and store closures. Message frequency varies, message and data rates may apply, and you can reply STOP anytime to opt out.';
   function consentState(c) {
@@ -71,8 +86,9 @@
     if (answer === 'yes') {
       const r = await notify({ kind: 'optin', customerId: c.id });
       if (r && r.ok && r.data && r.data.sent) toast(`Confirmation text sent to ${fmtPhone(c.phone)}`, true, 'checkcircle');
-      else if (r && r.ok && r.data && r.data.skipped) toast(`Texts saved as YES · ${r.data.skipped}`, true, 'checkcircle');
-      else toast('Texts saved as YES', true, 'checkcircle');
+      else if (r && r.ok && r.data && r.data.duplicate) toast('Texts saved as YES (confirmation was already sent before)', true, 'checkcircle');
+      else toast(`Texts saved as YES — but NO text was sent: ${why(r)}`, false, 'alerttriangle');
+      loadStatus().catch(() => {});
     }
   };
 
@@ -91,7 +107,16 @@
     if (!q) { q = { kind, customerId, orderIds: new Set(), timer: null }; queue.set(key, q); }
     if (orderId) q.orderIds.add(orderId);
     clearTimeout(q.timer);
-    q.timer = setTimeout(() => { queue.delete(key); notify({ kind, customerId, orderIds: [...q.orderIds] }).catch(() => {}); }, delayMs);
+    q.timer = setTimeout(async () => {
+      queue.delete(key);
+      try {
+        const r = await notify({ kind, customerId, orderIds: [...q.orderIds] });
+        const d = (r && r.data) || {};
+        const quiet = /Already sent|not in that state|switched off|No text consent|replied STOP|No successful card|No saved card|No valid mobile/i.test(d.skipped || '');
+        if (r && r.ok && d.sent) { try { toast(`Text sent: ${LABELS[kind] || kind}`, true, 'checkcircle'); } catch (_) {} }
+        else if (!(r && r.ok && quiet)) { try { toast(`Text not sent (${LABELS[kind] || kind}): ${why(r)}`, false, 'alerttriangle'); } catch (_) {} }
+      } catch (_) {}
+    }, delayMs);
   }
   function diff() {
     if (!snap) return takeSnap();
@@ -123,7 +148,11 @@
     const base = saveState;
     saveState = function v34SaveState() {
       const r = base.apply(this, arguments);
-      try { if (shared() && on() && !applying()) diff(); else if (!snap || applying()) takeSnap(); } catch (e) { console.error('V34 texts', e); }
+      try {
+        if (shared() && on() && !applying()) diff();
+        else if (shared() && !T.status && !applying() && snap) { diff(); } // status still loading — queue now; the server decides
+        else if (!snap || applying()) takeSnap();
+      } catch (e) { console.error('V34 texts', e); }
       return r;
     };
   }
@@ -148,6 +177,14 @@
     return `<div class="pos-card v34-texts"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">${icon('message', 17)} Texts</h3>${tag}<span class="helper-text" style="margin:0">${optedIn().length} customers opted in · ${(T.optOuts || []).length} replied STOP</span><span style="flex:1"></span><button class="btn btn-ghost btn-sm" onclick="v34Refresh()">Refresh</button></div>
       ${s && !s.twilioConfigured ? `<div class="warn-banner" style="margin-top:10px"><span>Twilio settings are missing in Netlify (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_MESSAGING_SERVICE_SID).</span></div>` : ''}
       ${s && s.tablesReady === false ? `<div class="warn-banner" style="margin-top:10px"><span>Run <strong>supabase/sms-v29.11.sql</strong> in Supabase to turn on the message log.</span></div>` : ''}
+      ${s ? `<div class="v34-setup"><h4>Setup check</h4><ul>
+        <li>${s.mode !== 'off' ? '✅' : '❌'} SMS_MODE = <strong>${E(s.mode)}</strong>${s.mode === 'off' ? ' — set to test or live in Netlify, then redeploy' : ''}</li>
+        <li>${s.twilioConfigured ? '✅' : '❌'} Twilio keys ${s.twilioConfigured ? `set (service ${E(s.messagingService || '')})` : `missing: ${E((s.missing || []).filter(k => k !== 'SMS_MODE').join(', '))}`}</li>
+        ${s.mode === 'test' ? `<li>${(s.testNumbers || []).length ? '✅' : '❌'} Test numbers: ${(s.testNumbers || []).length ? E(s.testNumbers.join(', ')) : 'none — add SMS_TEST_NUMBERS in Netlify'} <span class="helper-text" style="display:inline;margin:0">(in test mode only these numbers get texts)</span></li>` : ''}
+        <li>${s.tablesReady !== false ? '✅' : '❌'} Message log table</li>
+        ${s.lastError ? `<li>⚠️ Last failed text (${E(new Date(s.lastError.at).toLocaleString())}): <strong>${E(s.lastError.error)}</strong></li>` : ''}
+      </ul>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="v34-test-phone" type="tel" placeholder="Your cell, e.g. 516-592-1550" style="max-width:220px"><button class="btn btn-primary btn-sm" ${isManager() ? '' : 'disabled'} onclick="v34TestText()">Send test text</button><span class="helper-text" style="margin:0">Goes straight to Twilio and shows Twilio's exact answer.</span></div></div>` : ''}
       <div class="v34-grid"><div><h4>Automatic texts</h4>${Object.keys(LABELS).map(k => `<label class="v34-toggle"><input type="checkbox" ${enabled(k) ? 'checked' : ''} ${isManager() ? '' : 'disabled'} onchange="v34Toggle('${k}',this.checked)"> ${E(LABELS[k])}</label>`).join('')}</div>
       <div><h4>Store notice</h4><div class="helper-text" style="margin:0 0 6px">Hours changes, holiday or weather closures — sent to everyone opted in. Not for promotions.</div>
         <textarea id="v34-notice" rows="3" maxlength="240" placeholder="e.g. We're closed Monday 10/12 for the holiday. Open Tuesday 8am."></textarea>
@@ -159,6 +196,14 @@
   const rerender = () => { const el = document.querySelector('.v34-texts'); if (el) el.outerHTML = textsCard(); };
   window.v34Refresh = async () => { await loadStatus(); rerender(); };
   window.v34Toggle = (k, v) => { settings().enabled[k] = !!v; if (typeof saveState === 'function') saveState(); toast(`${LABELS[k]}: ${v ? 'on' : 'off'}`, true, 'checkcircle'); };
+  window.v34TestText = async () => {
+    const phone = String(document.getElementById('v34-test-phone')?.value || '').trim();
+    if (!e164(phone)) return toast('Enter a 10-digit mobile number', false, 'alerttriangle');
+    const r = await v16Api('sms-notify', { method: 'POST', body: JSON.stringify({ kind: 'test', phone }) });
+    if (r.ok && r.data && r.data.sent) toast(`Test text sent to ${fmtPhone(phone)} — Twilio status: ${r.data.status || 'queued'}`, true, 'checkcircle');
+    else window.alert(`Test text NOT sent.\n\n${why(r)}`);
+    await loadStatus(); rerender();
+  };
   window.v34SendNotice = async () => {
     const text = String(document.getElementById('v34-notice')?.value || '').trim();
     if (text.length < 5) return toast('Write the notice first', false, 'alerttriangle');

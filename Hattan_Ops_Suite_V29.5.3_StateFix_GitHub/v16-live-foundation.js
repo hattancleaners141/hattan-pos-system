@@ -106,7 +106,11 @@ function v16BlankSnapshot() {
 }
 
 function v16MergeArray(local = [], base = [], remote = []) {
-  const hasIds = [...local, ...base, ...remote].every(item => !item || typeof item !== 'object' || item.id !== undefined);
+  // Only lists of records with ids merge item-by-item. Lists of plain values (e.g. the garment
+  // order ['g_pants','g_blouse',…]) are one value: V32 merged them by "id" and collapsed them to
+  // a single entry — that is how the counter ended up showing only "Vest".
+  const all = [...local, ...base, ...remote];
+  const hasIds = all.length > 0 && all.every(item => item && typeof item === 'object' && !Array.isArray(item) && item.id !== undefined);
   if (!hasIds) return v16JsonEqual(local, base) ? remote : local;
   const map = list => new Map((list || []).filter(Boolean).map(item => [String(item.id), item]));
   const localMap = map(local), baseMap = map(base), remoteMap = map(remote);
