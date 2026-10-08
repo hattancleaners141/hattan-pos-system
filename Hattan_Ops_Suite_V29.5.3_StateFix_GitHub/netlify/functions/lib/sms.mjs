@@ -12,7 +12,7 @@ export const SHOP = {
 };
 const STOP = 'Reply STOP to opt out.';
 
-export const KINDS = ['optin', 'dropoff', 'ready', 'pickup', 'delivered', 'charged', 'declined', 'cardSaved', 'reminder', 'notice', 'cardLink'];
+export const KINDS = ['optin', 'dropoff', 'ready', 'pickup', 'delivered', 'charged', 'declined', 'cardSaved', 'reminder', 'notice', 'cardLink', 'doOver', 'doOverReply'];
 // Kinds the shop can switch off in Texts → Automatic texts. (optin confirmation is always sent.)
 export const DEFAULT_ENABLED = { dropoff: true, ready: true, pickup: true, delivered: true, charged: true, declined: true, cardSaved: true, reminder: true };
 
@@ -163,6 +163,16 @@ export function compose(kind, ctx) {
       break;
     case 'notice':
       msg = String(text || '');
+      break;
+    case 'doOver': {
+      const what = ctx.items ? `some stains on your ${ctx.items} that didn't fully come out` : `some stains that didn't fully come out`;
+      msg = `Hi${fn ? ' ' + fn : ''}, we always want to give you the best possible service. Before packing your ${ticketList(orders)}, our team noticed ${what}. Would you like us to clean ${ctx.plural ? 'them' : 'it'} again, free of charge? Reply AGAIN and we'll re-clean, or PACK and we'll have it ready as scheduled. Please let us know soon so there's no delay.`;
+      break;
+    }
+    case 'doOverReply':
+      msg = ctx.answer === 'again'
+        ? `Thank you${hi}! We'll clean it again at no charge and text you as soon as it's ready.`
+        : `Thank you${hi}! We'll pack it and have your ${ticketList(orders)} ready as scheduled.`;
       break;
     case 'cardLink':
       msg = `${fn ? 'Hi ' + fn + ', save' : 'Save'} your card on file so we can charge your orders automatically - no need to pay at pickup. Secure link: ${links[0]} Link expires in 7 days.`;

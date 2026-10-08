@@ -7,6 +7,7 @@ import { saveCardOnFile } from './lib/card-vault.mjs';
 import { mutateStore, readStore } from './lib/app.mjs';
 import { compose, deliver, firstName, SHOP } from './lib/sms.mjs';
 import { readCardLink } from './lib/card-link.mjs';
+import { staffAlert } from './lib/alerts.mjs';
 
 const placeholderEmail = c => `hattancleaners141+c${String(c.customerNumber || c.id).replace(/[^A-Za-z0-9]/g, '')}@gmail.com`;
 const isPlaceholder = e => /^hattancleaners141\+c[^@]+@gmail\.com$/i.test(String(e || ''));
@@ -28,7 +29,7 @@ export const handler = async (event) => {
       const card = (c.paymentMethods || []).find(p => p.processor === 'clover');
       return json(200, {
         ok: true, shop: SHOP, firstName: firstName(c), used: c.cardLinkUsed === sig,
-        card: card ? { brand: card.brand || 'Card', last4: card.last4 || '' } : null,
+        card: !!card,
         hasEmail: !!(c.email && !isPlaceholder(c.email)),
         clover: cloverConfigured() ? { publicToken: env('CLOVER_PUBLIC_TOKEN'), merchantId: env('CLOVER_MERCHANT_ID'), environment, sdkUrl: environment === 'production' ? 'https://checkout.clover.com/sdk.js' : 'https://checkout.sandbox.dev.clover.com/sdk.js' } : null,
       });
@@ -64,6 +65,7 @@ export const handler = async (event) => {
       const enabled = payload?.interfaceSettings?.sms?.enabled?.cardSaved !== false;
       if (enabled && card.last4) await deliver({ keys: [`cardSaved:${c.id}:${card.last4}`], kind: 'cardSaved', customer: fresh, body: compose('cardSaved', { customer: fresh, card }), sentBy: 'customer-text-link', event });
     } catch (_) { /* the card is saved either way */ }
+    try { await staffAlert({ type: 'card', title: 'Card saved from text link', text: `${card.brand || 'Card'} ending ${card.last4 || '----'} is now on file. Batch charges will include this customer.`, customerId: c.id, customerName: c.name }); } catch (_) {}
     return json(201, { ok: true, card: { brand: card.brand, last4: card.last4 } });
   } catch (error) { return handleError(error); }
 };

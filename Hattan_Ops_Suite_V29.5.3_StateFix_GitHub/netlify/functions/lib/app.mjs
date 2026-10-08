@@ -244,3 +244,18 @@ export async function vaultCard(customerId) {
   return rows?.[0] || null;
 }
 export { siteUrl };
+
+// Plain email (staff alerts etc.) through the same SMTP / Resend setup as sign-in codes.
+export async function sendEmail(to, subject, text, html) {
+  if (env('EMAIL_MODE') === 'log') { console.log(`[email:log] to=${to} subject=${subject}`); return { ok: true, logged: true }; }
+  if (env('SMTP_USER') && env('SMTP_PASS')) {
+    const { default: nodemailer } = await import('nodemailer');
+    const t = nodemailer.createTransport({ host: env('SMTP_HOST', 'smtp.gmail.com'), port: Number(env('SMTP_PORT', '465')), secure: env('SMTP_PORT', '465') === '465', auth: { user: env('SMTP_USER'), pass: env('SMTP_PASS') } });
+    await t.sendMail({ from: env('EMAIL_FROM', `Hattan Cleaners <${env('SMTP_USER')}>`), to, subject, text, html });
+    return { ok: true };
+  }
+  const key = env('RESEND_API_KEY');
+  if (!key) return { ok: false, skipped: 'Email is not set up' };
+  const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: env('EMAIL_FROM', 'Hattan Cleaners <app@hattancleaners.com>'), to: [to], subject, text, html }) });
+  return { ok: res.ok };
+}

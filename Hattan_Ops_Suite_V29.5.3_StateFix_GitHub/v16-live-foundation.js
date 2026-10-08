@@ -12,7 +12,7 @@ const V16_SHARED_KEYS = [
   'automatedTexts','rackSettings','printSettings','customerMemos',
   'interfaceSettings','garmentCatalog','materials','nextConveyorNumber',
   'deliveryBatches','nextDeliveryBatch','nextCustomerNumber','hardwareProfile',
-  'v14InstructionOrder','legacyRevenueHistory','migrationAudit',
+  'v14InstructionOrder','legacyRevenueHistory','migrationAudit','staffAlerts',
 ];
 
 const v16Live = {
@@ -585,7 +585,7 @@ async function v16MountCloverCardForm(customer) {
     v16DestroyCloverElements();
     const clover = new window.Clover(v16Live.config.clover.publicToken, { merchantId:v16Live.config.clover.merchantId, locale:'en-US' });
     const elements = clover.elements();
-    const styles = { body:{ fontFamily:'Arial, sans-serif', fontSize:'16px' }, input:{ fontSize:'17px' } };
+    const styles = { body:{ fontFamily:'Arial, sans-serif', fontSize:'16px', margin:'0', padding:'0' }, input:{ fontSize:'17px', height:'46px', lineHeight:'46px', padding:'0 12px', margin:'0', boxSizing:'border-box' } };
     // V36: CVV + ZIP are optional — off by default for cards on file kept from phone/records (card not present).
     const full = !!v16Live.cardFullCheck;
     document.querySelectorAll('.v36-optional').forEach(el => { el.style.display = full ? '' : 'none'; });
