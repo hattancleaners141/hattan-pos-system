@@ -637,7 +637,13 @@ async function v16SaveCloverCard(customerId) {
   if (button) button.disabled = true;
   if (status) { status.textContent = 'Tokenizing securely with Clover…'; status.className = 'v16-card-status'; }
   try {
-    const tokenResult = await v16Live.clover.createToken();
+    // V36.2: Clover's secure form can wait forever (e.g. when it needs CVV + ZIP) — never leave staff stuck.
+    const tokenResult = await Promise.race([
+      v16Live.clover.createToken(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error(v16Live.cardFullCheck
+        ? 'Clover did not answer. Check the card number, expiration, CVV and ZIP, then try again.'
+        : 'Clover would not accept the card without CVV + ZIP. Tick “Also ask for CVV + ZIP”, enter them, and save again.')), 15000)),
+    ]);
     if (tokenResult?.errors) throw new Error(Object.values(tokenResult.errors).join(' · '));
     if (!tokenResult?.token) throw new Error('Clover did not return a card token');
     const response = await v16Api('clover-cards', { method:'POST', body:JSON.stringify({
