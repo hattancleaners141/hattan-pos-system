@@ -10,6 +10,7 @@ const SHARED_KEYS = new Set([
   // counter thought it had unsaved changes and re-sent the whole state after each update.
   'workflowSettings', 'instructionTranslations', 'legacyImports', 'dailyRevenue',
   'recentCustomerViews', 'legacyRevenueHistory', 'migrationAudit',
+  'staffAlerts', // V38: customer replies + cards saved from text links (written by the server)
 ]);
 
 function stripSecrets(value, depth = 0) {

@@ -172,7 +172,7 @@
     if (!shared()) return '';
     const mode = s ? s.mode : '…';
     const tag = !s ? '' : mode === 'live' ? '<span class="v34-tag live">LIVE</span>' : mode === 'test' ? '<span class="v34-tag test">TEST — only test numbers</span>' : '<span class="v34-tag off">OFF</span>';
-    const kindName = k => ({ optin: 'Sign-up confirmation', notice: 'Store notice', reply: 'Customer reply', optout: 'STOP', 'optin-keyword': 'START', help: 'HELP' }[k] || LABELS[k] || k);
+    const kindName = k => ({ optin: 'Sign-up confirmation', notice: 'Store notice', reply: 'Customer reply', optout: 'STOP', 'optin-keyword': 'START', help: 'HELP', doOver: 'Do Over request', doOverReply: 'Do Over thank-you', 'doover-again': 'Do Over: AGAIN', 'doover-pack': 'Do Over: PACK', cardLink: 'Card link', test: 'Test' }[k] || LABELS[k] || k);
     const cname = id => (customerById(id) || {}).name || '';
     return `<div class="pos-card v34-texts"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">${icon('message', 17)} Texts</h3>${tag}<span class="helper-text" style="margin:0">${optedIn().length} customers opted in · ${(T.optOuts || []).length} replied STOP</span><span style="flex:1"></span><button class="btn btn-ghost btn-sm" onclick="v34Refresh()">Refresh</button></div>
       ${s && !s.twilioConfigured ? `<div class="warn-banner" style="margin-top:10px"><span>Twilio settings are missing in Netlify (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_MESSAGING_SERVICE_SID).</span></div>` : ''}

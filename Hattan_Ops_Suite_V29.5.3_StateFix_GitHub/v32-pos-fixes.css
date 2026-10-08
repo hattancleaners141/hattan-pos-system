@@ -65,3 +65,7 @@
 
 /* V36.1 card form: never let a Clover frame spill out of its box */
 .v16-clover-field{overflow:hidden;position:relative}
+
+/* V38: center text inside Clover's secure card boxes */
+.v16-clover-field{padding:0!important;display:flex;align-items:center}
+.v16-clover-field>div,.v16-clover-field iframe{width:100%!important;height:46px!important;border:0;display:block}

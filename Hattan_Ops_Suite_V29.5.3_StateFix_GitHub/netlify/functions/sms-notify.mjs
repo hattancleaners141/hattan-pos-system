@@ -3,6 +3,7 @@
 // shared store data, checks consent/opt-out, checks the ticket really is in that state, writes
 // the message itself, and refuses duplicates.
 import { cardLinkUrl } from './lib/card-link.mjs';
+import { mutateStore } from './lib/app.mjs';
 import { assertSameOrigin, handleError, json, methodNotAllowed, parseBody, requireSession, selectRows, storeId, HttpError } from './lib/shared.mjs';
 import { KINDS, ascii, compose, deliver, e164, loadStore, logInsert, receiptUrl, siteUrl, smsMode, smsSettings, baseDue, testNumbers, twilioConfigured, twilioSend } from './lib/sms.mjs';
 
@@ -80,6 +81,38 @@ export const handler = async (event) => {
       if (!customer.smsConsent?.on || !phone) return json(200, { ok: true, skipped: 'No text consent on file' });
       const r = await deliver({ keys: [`optin:${customer.id}:${phone}`], kind, customer, body: compose('optin', {}), sentBy: session.sub, event });
       return json(200, r);
+    }
+
+    // ---- Do Over: ask the customer whether to re-clean stained items (free) or pack them ----
+    if (kind === 'doOver') {
+      const sel = (Array.isArray(body.selections) ? body.selections : []).slice(0, 10);
+      const picked = sel.map(x => ({ o: (store.orders || []).find(o => String(o?.id) === String(x?.orderId)), lines: (Array.isArray(x?.lines) ? x.lines : []).map(Number).filter(n => Number.isInteger(n) && n >= 0) }))
+        .filter(x => x.o && String(x.o.customerId || '') === String(customer.id) && !['voided', 'picked_up', 'delivered'].includes(x.o.status));
+      if (!picked.length) throw new HttpError(400, 'Choose at least one open ticket');
+      const garments = store.garmentCatalog || [];
+      const nameOf = l => {
+        const g = garments.find(x => x.id === l.garmentId);
+        let n = String((l.serviceType === 'alterations' && l.garmentNote ? String(l.garmentNote).split(' · ')[0] : (g?.name || l.name || 'item'))).split(/\s*[\/(-]\s*/)[0].trim().toLowerCase();
+        const color = l.colorId && !['none', 'other', 'mixed', 'print'].includes(String(l.colorId)) ? String(l.colorId).toLowerCase() + ' ' : '';
+        return color + n;
+      };
+      const names = [];
+      for (const x of picked) for (const i of x.lines) { const l = (x.o.lineItems || x.o.itemsDetail || [])[i]; if (l) { const n = nameOf(l); if (!names.includes(n)) names.push(n); } }
+      const items = names.length <= 1 ? names.join('') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+      const plural = names.length > 1 || picked.some(x => x.lines.some(i => Number(((x.o.lineItems || [])[i] || {}).qty) > 1)) || (!names.length);
+      const orders = picked.map(x => x.o);
+      const msg = compose('doOver', { customer, orders, items: items.slice(0, 120), plural });
+      const r = await deliver({ keys: [`doOver:${customer.id}:${Date.now()}`], kind, customer, orderIds: orders.map(o => o.id), body: msg, sentBy: session.sub, event });
+      const at = new Date().toISOString();
+      try {
+        await mutateStore(s => {
+          for (const x of picked) {
+            const o = (s.orders || []).find(y => String(y.id) === String(x.o.id));
+            if (o) o.doOver = { at, by: session.name || session.sub, lines: x.lines, items, status: r.sent ? 'asked' : 'not-texted' };
+          }
+        });
+      } catch (e) { console.error('doOver record', e); }
+      return json(200, { ...r, message: msg });
     }
 
     if (kind === 'cardLink') {
