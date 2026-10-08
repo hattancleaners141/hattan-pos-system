@@ -7,4 +7,5 @@
 /node_modules/*  /index.html  404!
 /package.json  /index.html  404!
 /r/*  /.netlify/functions/receipt?t=:splat  200
+/card/*  /card.html  200
 /*  /index.html  200

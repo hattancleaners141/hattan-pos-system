@@ -12,7 +12,7 @@ export const SHOP = {
 };
 const STOP = 'Reply STOP to opt out.';
 
-export const KINDS = ['optin', 'dropoff', 'ready', 'pickup', 'delivered', 'charged', 'declined', 'cardSaved', 'reminder', 'notice'];
+export const KINDS = ['optin', 'dropoff', 'ready', 'pickup', 'delivered', 'charged', 'declined', 'cardSaved', 'reminder', 'notice', 'cardLink'];
 // Kinds the shop can switch off in Texts → Automatic texts. (optin confirmation is always sent.)
 export const DEFAULT_ENABLED = { dropoff: true, ready: true, pickup: true, delivered: true, charged: true, declined: true, cardSaved: true, reminder: true };
 
@@ -163,6 +163,9 @@ export function compose(kind, ctx) {
       break;
     case 'notice':
       msg = String(text || '');
+      break;
+    case 'cardLink':
+      msg = `${fn ? 'Hi ' + fn + ', save' : 'Save'} your card on file so we can charge your orders automatically - no need to pay at pickup. Secure link: ${links[0]} Link expires in 7 days.`;
       break;
     case 'test':
       msg = 'Test text from the POS. Texting is working.';

@@ -2,6 +2,7 @@
 // The browser only says WHAT happened (kind + customer + tickets). The server re-reads the
 // shared store data, checks consent/opt-out, checks the ticket really is in that state, writes
 // the message itself, and refuses duplicates.
+import { cardLinkUrl } from './lib/card-link.mjs';
 import { assertSameOrigin, handleError, json, methodNotAllowed, parseBody, requireSession, selectRows, storeId, HttpError } from './lib/shared.mjs';
 import { KINDS, ascii, compose, deliver, e164, loadStore, logInsert, receiptUrl, siteUrl, smsMode, smsSettings, baseDue, testNumbers, twilioConfigured, twilioSend } from './lib/sms.mjs';
 
@@ -79,6 +80,13 @@ export const handler = async (event) => {
       if (!customer.smsConsent?.on || !phone) return json(200, { ok: true, skipped: 'No text consent on file' });
       const r = await deliver({ keys: [`optin:${customer.id}:${phone}`], kind, customer, body: compose('optin', {}), sentBy: session.sub, event });
       return json(200, r);
+    }
+
+    if (kind === 'cardLink') {
+      const link = cardLinkUrl(base, customer.id);
+      // a fresh dedupe key each time so staff can resend; the server still checks consent + STOP
+      const r = await deliver({ keys: [`cardLink:${customer.id}:${Date.now()}`], kind, customer, body: compose('cardLink', { customer, links: [link] }), sentBy: session.sub, event });
+      return json(200, { ...r, link });
     }
 
     if (kind === 'cardSaved') {

@@ -16,6 +16,11 @@
   status = 200
 
 [[redirects]]
+  from = "/card/*"
+  to = "/card.html"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

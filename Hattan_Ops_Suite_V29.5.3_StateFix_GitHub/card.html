@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Save your card · Hattan Cleaners</title>
+<style>
+:root{--ink:#1d2433;--muted:#5b6475;--line:#e3e0d8;--bg:#f6f4ef;--card:#fff;--brand:#163f36;--ok:#1f6f43;--err:#b42318}
+@media (prefers-color-scheme:dark){:root{--ink:#eceae4;--muted:#a3a9b6;--line:#343a46;--bg:#15181e;--card:#1d2129;--brand:#7fc4ae}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:480px;margin:0 auto;padding:24px 16px 48px}
+.logo{font-weight:700;letter-spacing:.02em;color:var(--brand);font-size:15px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+label.f{display:block;font-weight:600;font-size:14px;margin:12px 0 4px}
+.field{border:1px solid var(--line);border-radius:10px;height:48px;padding:0 10px;background:#fff;overflow:hidden}
+.field iframe{width:100%!important;height:46px!important;border:0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input[type=email]{width:100%;height:46px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font:inherit;background:var(--card);color:var(--ink)}
+.consent{display:flex;gap:10px;align-items:flex-start;margin:16px 0 4px;font-size:14px;color:var(--muted)}
+.consent input{width:20px;height:20px;margin-top:2px;flex:none}
+button{width:100%;height:52px;margin-top:14px;border:0;border-radius:12px;background:var(--brand);color:#fff;font-family:inherit;font-weight:600;font-size:17px;cursor:pointer}
+@media (prefers-color-scheme:dark){button{color:#10201b}}
+button:disabled{opacity:.55;cursor:default}
+.msg{margin-top:12px;font-size:14px;min-height:20px}.msg.err{color:var(--err)}
+.lock{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px;margin-top:14px}
+.done{text-align:center;padding:12px 0}.done .big{font-size:42px}
+footer{color:var(--muted);font-size:13px;text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<main>
+  <div class="logo">HATTAN CLEANERS</div>
+  <div class="card" id="box"><h1>Loading…</h1></div>
+  <footer>Hattan Cleaners · 141 3rd Ave, New York, NY · 212-477-1740</footer>
+</main>
+<script>
+(function () {
+  'use strict';
+  var box = document.getElementById('box');
+  var t = (location.pathname.split('/card/')[1] || new URLSearchParams(location.search).get('t') || '').split('/')[0];
+  var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; }); };
+  var api = function (opts) { return fetch('/.netlify/functions/card-link' + (opts ? '' : '?t=' + encodeURIComponent(t)), opts ? { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(opts) } : { credentials: 'same-origin' }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { d.__ok = r.ok; return d; }); }); };
+  var fail = function (title, text) { box.innerHTML = '<h1>' + E(title) + '</h1><p class="sub">' + E(text) + '</p>'; };
+  var clover = null;
+
+  function load(src) { return new Promise(function (ok, no) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { no(new Error('The secure card form could not load. Check your connection and try again.')); }; document.head.appendChild(s); }); }
+
+  function form(d) {
+    var hi = d.firstName ? 'Hi ' + E(d.firstName) + ', save' : 'Save';
+    box.innerHTML = '<h1>' + hi + ' your card on file</h1>' +
+      '<p class="sub">We’ll charge your orders to this card so you don’t have to pay at pickup.' + (d.card ? ' This replaces your ' + E(d.card.brand) + ' ending ' + E(d.card.last4) + '.' : '') + '</p>' +
+      '<label class="f">Card number</label><div class="field" id="c-num"></div>' +
+      '<div class="row"><div><label class="f">Expiration</label><div class="field" id="c-date"></div></div><div><label class="f">CVV</label><div class="field" id="c-cvv"></div></div></div>' +
+      '<label class="f">Billing ZIP</label><div class="field" id="c-zip"></div>' +
+      (d.hasEmail ? '' : '<label class="f">Email for receipts <span style="font-weight:400;color:var(--muted)">(optional)</span></label><input type="email" id="c-email" autocomplete="email" placeholder="you@email.com">') +
+      '<label class="consent"><input type="checkbox" id="c-ok"><span>I authorize Hattan Cleaners to keep this card on file and charge it for my orders. I can ask to remove it anytime by calling 212-477-1740.</span></label>' +
+      '<button id="c-save" disabled>Save card</button><div class="msg" id="c-msg">Loading the secure card form…</div>' +
+      '<div class="lock">🔒 Your card goes directly to Clover, our payment processor. Hattan Cleaners never sees or stores your full card number or CVV.</div>';
+    var btn = document.getElementById('c-save'), msg = document.getElementById('c-msg');
+    load(d.clover.sdkUrl).then(function () {
+      clover = new window.Clover(d.clover.publicToken, { merchantId: d.clover.merchantId, locale: 'en-US' });
+      var el = clover.elements(), st = { body: { fontFamily: 'Arial, sans-serif', fontSize: '16px' }, input: { fontSize: '17px' } };
+      [['CARD_NUMBER', '#c-num'], ['CARD_DATE', '#c-date'], ['CARD_CVV', '#c-cvv'], ['CARD_POSTAL_CODE', '#c-zip']].forEach(function (p) { el.create(p[0], st).mount(p[1]); });
+      btn.disabled = false; msg.textContent = '';
+    }).catch(function (e) { msg.className = 'msg err'; msg.textContent = e.message; });
+
+    btn.addEventListener('click', function () {
+      msg.className = 'msg';
+      if (!document.getElementById('c-ok').checked) { msg.className = 'msg err'; msg.textContent = 'Please tick the box to authorize charges to this card.'; return; }
+      var emailEl = document.getElementById('c-email'), email = emailEl ? emailEl.value.trim() : '';
+      btn.disabled = true; msg.textContent = 'Saving securely…';
+      var timeout = new Promise(function (_, no) { setTimeout(function () { no(new Error('That took too long. Please check the card details and try again.')); }, 20000); });
+      Promise.race([clover.createToken(), timeout]).then(function (r) {
+        if (r && r.errors && Object.keys(r.errors).length) throw new Error(Object.keys(r.errors).map(function (k) { return r.errors[k]; }).join(' · '));
+        if (!r || !r.token) throw new Error('The card could not be verified. Please re-enter it.');
+        return api({ t: t, token: r.token, consent: true, email: email });
+      }).then(function (res) {
+        if (!res.__ok) throw new Error(res.error || 'We couldn’t save the card. Please try again or call 212-477-1740.');
+        box.innerHTML = '<div class="done"><div class="big">✅</div><h1>Card saved</h1><p class="sub">' + E((res.card && res.card.brand) || 'Your card') + (res.card && res.card.last4 ? ' ending ' + E(res.card.last4) : '') + ' is on file with Hattan Cleaners. You can close this page.</p></div>';
+      }).catch(function (e) { btn.disabled = false; msg.className = 'msg err'; msg.textContent = e.message; });
+    });
+  }
+
+  if (!t) return fail('Link not valid', 'Please use the link from our text, or call us at 212-477-1740.');
+  api().then(function (d) {
+    if (!d.__ok) return fail(d.error === 'This link has expired' ? 'This link has expired' : 'Link not valid', 'Ask us to text you a new link, or call 212-477-1740.');
+    if (d.used) return fail('Card already saved', 'This link was already used. To change your card, call us at 212-477-1740.');
+    if (!d.clover) return fail('Not available right now', 'Please call us at 212-477-1740.');
+    form(d);
+  }).catch(function () { fail('Please try again', 'We couldn’t load this page. Check your connection.'); });
+})();
+</script>
+</body>
+</html>
