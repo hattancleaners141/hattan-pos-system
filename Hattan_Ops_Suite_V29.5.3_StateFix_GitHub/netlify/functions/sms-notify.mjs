@@ -141,11 +141,13 @@ export const handler = async (event) => {
       pickup: o => o.status === 'picked_up',
       delivered: o => o.status === 'delivered',
       charged: () => true,
+      receipt: () => true,
       declined: o => !o.paid && o.paymentStatus !== 'paid',
     }[kind];
     if (!statusOk) throw new HttpError(400, 'That text type is sent automatically by the server');
     orders = orders.filter(statusOk);
-    const keyOf = o => kind === 'declined' ? `declined:${o.id}:${nyDay()}` : `${kind}:${o.id}`;
+    const sentAt = Date.now();
+    const keyOf = o => kind === 'declined' ? `declined:${o.id}:${nyDay()}` : kind === 'receipt' ? `receipt:${o.id}:${sentAt}` : `${kind}:${o.id}`;
     const done = await alreadySent(orders.map(keyOf));
     orders = orders.filter(o => !done.has(keyOf(o)));
     if (!orders.length) return json(200, { ok: true, skipped: 'Already sent or ticket not in that state' });
@@ -183,6 +185,6 @@ export const handler = async (event) => {
     if (kind !== 'declined') ctx.links = orders.length === 1 ? [receiptUrl(base, orders[0].id)] : [];
 
     const r = await deliver({ keys, kind, customer, orderIds: orders.map(o => o.id), body: compose(kind, ctx), sentBy: session.sub, event });
-    return json(200, r);
+    return json(200, kind === 'receipt' ? { ...r, link: ctx.links[0] || '' } : r);
   } catch (error) { return handleError(error); }
 };

@@ -12,7 +12,7 @@ export const SHOP = {
 };
 const STOP = 'Reply STOP to opt out.';
 
-export const KINDS = ['optin', 'dropoff', 'ready', 'pickup', 'delivered', 'charged', 'declined', 'cardSaved', 'reminder', 'notice', 'cardLink', 'doOver', 'doOverReply'];
+export const KINDS = ['optin', 'dropoff', 'ready', 'pickup', 'delivered', 'charged', 'declined', 'cardSaved', 'reminder', 'notice', 'cardLink', 'doOver', 'doOverReply', 'receipt'];
 // Kinds the shop can switch off in Texts → Automatic texts. (optin confirmation is always sent.)
 export const DEFAULT_ENABLED = { dropoff: true, ready: true, pickup: true, delivered: true, charged: true, declined: true, cardSaved: true, reminder: true };
 
@@ -136,10 +136,13 @@ export function compose(kind, ctx) {
       const del = orders.every(o => o.fulfillment === 'delivery');
       msg = del
         ? `Hi${fn ? ' ' + fn : ''}, your ${ticketList(orders)} ${orders.length === 1 ? 'is' : 'are'} ready and will be delivered soon.`
-        : `Hi${fn ? ' ' + fn : ''}, your ${ticketList(orders)} ${orders.length === 1 ? 'is' : 'are'} ready for pickup at ${SHOP.address}.${orders.length === 1 ? amountDueText(orders[0]) : ''}`;
+        : `Hi${fn ? ' ' + fn : ''}, great news! Your ${ticketList(orders)} ${orders.length === 1 ? 'is' : 'are'} ready for pickup at ${SHOP.address} (Mon-Fri 8-6, Sat 9-4).${orders.length === 1 ? amountDueText(orders[0]) : ''} We look forward to seeing you!`;
       msg += link;
       break;
     }
+    case 'receipt':
+      msg = links.length === 1 ? `Hi${fn ? ' ' + fn : ''}, here's your receipt for ${ticketList(orders)}: ${links[0]} Thank you for choosing us!` : `Hi${fn ? ' ' + fn : ''}, ask us at the counter for your receipt.`;
+      break;
     case 'pickup':
       msg = `Thanks for picking up ${ticketList(orders)}${hi}! See you next time.${link}`;
       break;

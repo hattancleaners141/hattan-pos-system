@@ -69,3 +69,16 @@
 /* V38: center text inside Clover's secure card boxes */
 .v16-clover-field{padding:0!important;display:flex;align-items:center}
 .v16-clover-field>div,.v16-clover-field iframe{width:100%!important;height:46px!important;border:0;display:block}
+
+/* V39: per-piece fabric choice at drop off */
+.v282-mat-all{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 10px}
+.v282-mat-all>span{font-weight:700;margin-right:4px}
+.v282-mat-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0;border-top:1px dashed #d9ddda}
+.v282-mat-piece{min-width:170px;font-weight:700}
+/* V39: pick up from the customer profile */
+.v39-pk{max-height:46vh;overflow:auto;margin:6px 0 10px;border:1px solid #dfe3e0;border-radius:12px;padding:6px 10px}
+.v39-due{font-size:18px;margin:8px 0}
+.v39-pay{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}.v39-pay .btn{flex:1 1 140px}
+.v282-stage:has(.v282-mat-all){overflow-y:auto}
+.v282-stage:has(.v282-mat-all)>*{flex-shrink:0}
+.v282-mat-row .v282-chip,.v282-mat-all .v282-chip{min-height:40px;padding:6px 12px}
