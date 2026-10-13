@@ -27,3 +27,13 @@
     white-space: nowrap !important;
   }
 }
+
+/* V39.1 — keep everything inside the Star TSP100's printable width.
+   The printer/driver starts printing ~4–5mm in from the left edge, so the right ~5mm of a
+   full 72mm ticket was cut off (prices, balance). Keep a wider right margin. */
+@media print {
+  html.v8-receipt-printing #print-area .v8-print-ticket{padding-left:1.5mm!important;padding-right:7mm!important;box-sizing:border-box!important;overflow:hidden!important}
+  html.v8-receipt-printing #print-area .v8-print-ticket *{max-width:100%;box-sizing:border-box}
+  html.v8-receipt-printing #print-area .rt-row{display:flex!important;justify-content:space-between;gap:2mm;width:100%!important}
+  html.v8-receipt-printing #print-area .rt-row>*:last-child{white-space:nowrap;flex:none}
+}
