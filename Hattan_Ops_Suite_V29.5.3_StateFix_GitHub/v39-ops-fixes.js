@@ -91,6 +91,7 @@
     });
     if (typeof saveState === 'function') saveState();
     if (typeof closePosModal === 'function') closePosModal();
+    try { localStorage.setItem('hcLastPrinted', JSON.stringify(clean.map(o => o.id))); } catch (_) {}
     queue = clean.map(order => ({ order, label }));
     active = true; startedAt = Date.now();
     if (clean.length > 1) toast(`${clean.length} tickets queued · each prints separately`, true, 'printer');
@@ -108,6 +109,36 @@
     window.v8PrintOrders(batch.sort((a, b) => Number(a.ticket) - Number(b.ticket)), 'Service ticket');
   };
   try { posPrintReceipt = window.posPrintReceipt; posDoPrint = window.posDoPrint; v8PrintOrders = window.v8PrintOrders; } catch (_) {}
+
+  /* ---------------- 2b. "+" key = reprint ---------------- */
+  // Press + (numpad or keyboard) anywhere outside a text box to reprint the last ticket(s)
+  // printed on this computer. With the POS opened in the quick-print window (Edge/Chrome
+  // --kiosk-printing) this prints straight to the Star printer with no print screen.
+  function lastPrintedOrders() {
+    let ids = [];
+    try { ids = JSON.parse(localStorage.getItem('hcLastPrinted') || '[]'); } catch (_) {}
+    let orders = ids.map(id => state.orders.find(o => o.id === id)).filter(Boolean);
+    if (!orders.length) {
+      const newest = (state.orders || []).filter(o => o && !o.legacy && o.status !== 'voided').sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))[0];
+      if (newest) orders = [newest];
+    }
+    return orders;
+  }
+  window.v39Reprint = () => {
+    const orders = lastPrintedOrders();
+    if (!orders.length) return toast('No ticket to reprint yet', false, 'printer');
+    toast(`Reprinting ${orders.map(o => '#' + (o.ticket || o.id)).join(', ')}`, true, 'printer');
+    window.v8PrintOrders(orders, 'Reprint');
+  };
+  document.addEventListener('keydown', e => {
+    if (e.key !== '+' || e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target, tag = t && t.tagName;
+    const scanBox = t && ['v3-conveyor-input', 'v13-rack-scan', 'v8-delivery-scan'].includes(t.id); // barcodes never contain +
+    if (!scanBox && (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable))) return;
+    if (!state.session || !state.session.loggedIn) return;
+    e.preventDefault();
+    window.v39Reprint();
+  }, true);
 
   /* ---------------- 3. profile ticket buttons ---------------- */
   const CLOSED = ['picked_up', 'delivered', 'voided'];
