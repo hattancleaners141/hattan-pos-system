@@ -124,8 +124,24 @@
     }
     return orders;
   }
+  // Which ticket does + mean right now? 1) the ticket highlighted in Ticket List, 2) a ticket
+  // whose detail window is open, 3) otherwise the last ticket(s) printed on this computer.
+  function targetedOrders() {
+    const byId = id => id && state.orders.find(o => o.id === id);
+    const focusedRow = document.activeElement && document.activeElement.closest && document.activeElement.closest('tr[data-order-id]');
+    if (focusedRow) { const o = byId(focusedRow.dataset.orderId); if (o) return [o]; }
+    const selRow = document.querySelector('#pos-content tr.v14-ledger-selected[data-order-id]');
+    if (selRow) { const o = byId(selRow.dataset.orderId); if (o) return [o]; }
+    try { if (state.posNav === 'orders' && typeof v14LedgerSelectedId !== 'undefined') { const o = byId(v14LedgerSelectedId); if (o) return [o]; } } catch (_) {}
+    const modal = [...document.querySelectorAll('.pos-modal-overlay.show, .modal-overlay.show, .pos-modal.show')].pop();
+    if (modal) {
+      const ids = [...new Set([...modal.querySelectorAll('[onclick*="posPrintReceipt("],[onclick*="posDoPrint("]')].map(b => (b.getAttribute('onclick').match(/(?:posPrintReceipt|posDoPrint)\('([^']+)'\)/) || [])[1]).filter(Boolean))];
+      if (ids.length === 1) { const o = byId(ids[0]); if (o) return [o]; }
+    }
+    return null;
+  }
   window.v39Reprint = () => {
-    const orders = lastPrintedOrders();
+    const orders = targetedOrders() || lastPrintedOrders();
     if (!orders.length) return toast('No ticket to reprint yet', false, 'printer');
     toast(`Reprinting ${orders.map(o => '#' + (o.ticket || o.id)).join(', ')}`, true, 'printer');
     window.v8PrintOrders(orders, 'Reprint');
