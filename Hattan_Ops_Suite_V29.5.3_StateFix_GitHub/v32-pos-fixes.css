@@ -82,3 +82,19 @@
 .v282-stage:has(.v282-mat-all){overflow-y:auto}
 .v282-stage:has(.v282-mat-all)>*{flex-shrink:0}
 .v282-mat-row .v282-chip,.v282-mat-all .v282-chip{min-height:40px;padding:6px 12px}
+
+/* V40: nothing on the Drop Off screens may sit on top of anything else — long steps scroll */
+.v282-stage{overflow-y:auto!important}
+.v282-stage>*{flex-shrink:0}
+.v282-shirt-colors,.v282-colors{min-height:auto!important}
+.v282-mini{min-height:36px!important;padding:5px 10px!important;font-size:13px!important}
+.v282-all-box{border:2px solid var(--brand,#163f36);border-radius:12px;padding:8px 10px;margin:4px 0 10px;background:#f3faf5}
+.v282-all-head{font-weight:800;margin-bottom:4px;display:flex;align-items:center}
+.v282-piece{border:1px solid #d9ddda;border-radius:12px;padding:8px 10px;margin-bottom:8px}
+.v282-piece-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:2px}
+.v282-piece .v282-mat-row{border-top:0;padding:3px 0}
+.v282-mat-piece{min-width:110px;font-weight:700;font-size:13px;color:#475467}
+.v282-alt-on{display:inline-flex;align-items:center;gap:6px;background:#fff4e5;color:#b54708;border-radius:999px;padding:2px 4px 2px 10px;font-weight:700;font-size:13px}
+.v282-piece-color{display:flex;align-items:center;gap:10px;font-weight:800;margin-bottom:4px}
+.v282-tap{cursor:pointer;text-decoration:underline dotted}
+.v282-color.sel{outline:3px solid var(--brand,#163f36)}
