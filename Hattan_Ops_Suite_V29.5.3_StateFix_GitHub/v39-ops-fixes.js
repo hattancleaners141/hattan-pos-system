@@ -221,3 +221,32 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
 
+
+/* V41 — "Check Clover now" on the Payments screen: pulls voids / refunds done on the Clover
+   machine or dashboard into the POS (this also runs automatically every 15 minutes). */
+(function () {
+  'use strict';
+  const E = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  const isMgr = () => { try { return typeof v6IsManager === 'function' && v6IsManager(); } catch (_) { return false; } };
+  window.v41CheckClover = async () => {
+    const btn = document.getElementById('v41-check'); if (btn) { btn.disabled = true; btn.textContent = 'Checking Clover…'; }
+    const r = await v16Api('clover-sync', { method: 'POST', body: JSON.stringify({ days: 30 }) });
+    if (btn) { btn.disabled = false; btn.textContent = '↩️ Check Clover for voids / refunds'; }
+    if (!r.ok) return toast(r.data?.error || 'Could not reach Clover', false, 'alerttriangle');
+    const d = r.data, ticket = id => { const o = state.orders.find(x => x.id === id); return o ? '#' + (o.ticket || o.id) : id; };
+    const rows = (d.results || []).filter(x => x.state && x.state !== 'ok' || x.error);
+    openPosModal(`<h3>↩️ Clover check</h3><p class="pm-sub">Checked ${d.checked} card charge${d.checked === 1 ? '' : 's'} from the last 30 days · ${d.changed ? `<strong>${d.changed} updated in the POS</strong>` : 'nothing new'}.</p>
+      ${rows.length ? `<div class="pos-table-wrap"><table class="pos-table"><thead><tr><th>Clover charge</th><th>Tickets</th><th>Clover says</th></tr></thead><tbody>${rows.map(x => `<tr><td>${E(x.chargeId)}</td><td>${E((x.orders || []).map(ticket).join(', '))}</td><td>${x.error ? `<span style="color:#b42318">${E(x.error)}</span>` : E(x.state + (x.refundedCents ? ' · $' + (x.refundedCents / 100).toFixed(2) : ''))}</td></tr>`).join('')}</tbody></table></div>` : '<div class="helper-text">No voids or refunds found on Clover.</div>'}
+      <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="closePosModal();renderPosContent()">Done</button>`);
+  };
+  function inject() {
+    if (state.posNav !== 'payments' || !isMgr()) return;
+    const content = document.getElementById('pos-content'); if (!content || content.querySelector('#v41-check')) return;
+    content.insertAdjacentHTML('afterbegin', `<div class="v41-bar"><button id="v41-check" class="btn btn-secondary" onclick="v41CheckClover()">↩️ Check Clover for voids / refunds</button><span class="helper-text" style="margin:0">Voids and refunds done on the Clover machine or dashboard are pulled in automatically every 15 minutes — tickets go back to unpaid and you get a 🔔 alert.</span></div>`);
+  }
+  let q = false;
+  const obs = new MutationObserver(() => { if (!q) { q = true; requestAnimationFrame(() => { q = false; try { inject(); } catch (_) {} }); } });
+  const start = () => obs.observe(document.body, { childList: true, subtree: true });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+  const css = document.createElement('style'); css.textContent = '.v41-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}'; document.head.appendChild(css);
+})();

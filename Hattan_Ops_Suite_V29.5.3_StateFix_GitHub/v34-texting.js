@@ -163,7 +163,7 @@
   }
 
   /* ---------------- 3. Marketing → Texts ---------------- */
-  const LABELS = { dropoff: 'Drop-off thank-you + receipt', ready: 'Order ready for pickup', pickup: 'Thanks for picking up', delivered: 'Delivered (with photo link)', charged: 'Card on file charged', declined: 'Card declined', cardSaved: 'Card saved on file', reminder: 'Reminder after 7 and 14 days' };
+  const LABELS = { dropoff: 'Drop-off thank-you + receipt', ready: 'Order ready for pickup', pickup: 'Thanks for picking up', delivered: 'Delivered (with photo link)', charged: 'Card on file charged', declined: 'Card declined', cardSaved: 'Card saved on file', reminder: 'Reminder after 7 and 14 days', reversed: 'Card payment voided / refunded' };
   const settings = () => { state.interfaceSettings = state.interfaceSettings || {}; const s = state.interfaceSettings.sms = state.interfaceSettings.sms || {}; s.enabled = s.enabled || {}; return s; };
   const enabled = k => settings().enabled[k] !== false;
   const optedIn = () => (state.customers || []).filter(c => consentState(c) === 'on');

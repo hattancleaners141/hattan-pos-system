@@ -12,9 +12,9 @@ export const SHOP = {
 };
 const STOP = 'Reply STOP to opt out.';
 
-export const KINDS = ['optin', 'dropoff', 'ready', 'pickup', 'delivered', 'charged', 'declined', 'cardSaved', 'reminder', 'notice', 'cardLink', 'doOver', 'doOverReply', 'receipt'];
+export const KINDS = ['optin', 'dropoff', 'ready', 'pickup', 'delivered', 'charged', 'declined', 'cardSaved', 'reminder', 'notice', 'cardLink', 'doOver', 'doOverReply', 'receipt', 'reversed'];
 // Kinds the shop can switch off in Texts → Automatic texts. (optin confirmation is always sent.)
-export const DEFAULT_ENABLED = { dropoff: true, ready: true, pickup: true, delivered: true, charged: true, declined: true, cardSaved: true, reminder: true };
+export const DEFAULT_ENABLED = { dropoff: true, ready: true, pickup: true, delivered: true, charged: true, declined: true, cardSaved: true, reminder: true, reversed: true };
 
 export function smsMode() {
   const m = env('SMS_MODE', 'off').toLowerCase();
@@ -140,6 +140,11 @@ export function compose(kind, ctx) {
       msg += link;
       break;
     }
+    case 'reversed':
+      msg = ctx.voided
+        ? `Your ${usd(charge.amount)} charge${charge.last4 ? ' to card ending ' + charge.last4 : ''} for ${ticketList(orders)} was voided, so you were not charged. Questions? ${SHOP.phone}.`
+        : `We refunded ${usd(charge.amount)} to your card${charge.last4 ? ' ending ' + charge.last4 : ''} for ${ticketList(orders)}. It can take 5-10 business days to appear on your statement. Questions? ${SHOP.phone}.`;
+      break;
     case 'receipt':
       msg = links.length === 1 ? `Hi${fn ? ' ' + fn : ''}, here's your receipt for ${ticketList(orders)}: ${links[0]} Thank you for choosing us!` : `Hi${fn ? ' ' + fn : ''}, ask us at the counter for your receipt.`;
       break;
