@@ -16,7 +16,7 @@
   const alerts = () => (Array.isArray(state.staffAlerts) ? state.staffAlerts : []).slice().sort((a, b) => String(b.at).localeCompare(String(a.at)));
   const unread = () => { const s = seenAt(); return alerts().filter(a => !s || String(a.at) > s); };
   const when = iso => { const d = new Date(iso); const mins = Math.round((Date.now() - d) / 60000); return mins < 1 ? 'just now' : mins < 60 ? `${mins} min ago` : d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); };
-  const ICON = { card: '💳', reply: '💬', doover: '🔁', texts: '📵' };
+  const ICON = { card: '💳', reply: '💬', doover: '🔁', texts: '📵', clover: '↩️' };
 
   /* ---------------- bell ---------------- */
   let open = false;
