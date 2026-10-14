@@ -6,7 +6,7 @@
   margin: 0 0 2.2mm 0;
   padding: 0;
   text-align: center !important;
-  font-size: 54px !important;
+  font-size: 84px !important;
   line-height: .9 !important;
   font-weight: 1000 !important;
   letter-spacing: 1px;
@@ -20,7 +20,7 @@
     margin: 0 0 2.2mm 0 !important;
     padding: 0 !important;
     text-align: center !important;
-    font-size: 54px !important;
+    font-size: 84px !important;
     line-height: .9 !important;
     font-weight: 1000 !important;
     letter-spacing: 1px !important;
@@ -63,5 +63,26 @@
 #print-area .v11-ready-line strong,#print-area .v11-ready-line b{font-size:17px}
 #print-area .v11-bottom-ticket{font-size:16px!important;margin-top:2mm!important}
 #print-area .v8-barcode-label{font-size:13px!important}
-#print-area .v28210-unit-hero{font-size:58px!important;line-height:1!important;margin-bottom:2mm!important}
 #print-area .v11-item-line .rt-row{font-size:17px!important}
+
+/* V42 — apartment much bigger; garment lines back to a calmer size */
+#print-area .v28210-unit-hero{font-size:84px!important;line-height:.95!important;letter-spacing:1px!important;margin-bottom:2.5mm!important}
+#print-area .v11-address + .v11-address{font-size:26px!important;margin-top:1mm!important}
+#print-area .v11-item-line{font-size:14px!important;padding:1.6mm 0!important}
+#print-area .v11-item-line .rt-row{font-size:14px!important}
+#print-area .v11-item-detail{font-size:11px!important}
+/* Pick-Up Order slip */
+#print-area .v42-slip{font-family:Arial,Helvetica,sans-serif;line-height:1.15}
+#print-area .v42-stamp{text-align:right;font-size:11px;margin-top:2mm}
+#print-area .v42-title{text-align:center;font-size:22px;font-weight:900;margin:3mm 0 2mm}
+#print-area .v42-num{font-size:14px}
+#print-area .v42-day{font-size:30px;font-weight:700;margin-top:1mm}
+#print-area .v42-date{font-size:20px;font-weight:700;margin-bottom:3mm}
+#print-area .v42-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:1mm}
+#print-area .v42-name{font-size:19px;font-weight:900}
+#print-area .v42-addr{font-size:20px;font-weight:900;margin-top:1mm}
+#print-area .v42-unit{font-size:30px;font-weight:900;line-height:1.05}
+#print-area .v42-phone{font-size:16px;margin-top:1mm}
+#print-area .v42-memo{font-size:13px;margin-top:2mm;min-height:8mm}
+#print-area .v42-ready{font-size:14px;font-weight:700;margin-top:2mm;border-top:1.5px solid #000;padding-top:1.5mm}
+#print-area .v42-id{font-family:'Courier New',monospace;font-size:11px;margin-top:2mm}
