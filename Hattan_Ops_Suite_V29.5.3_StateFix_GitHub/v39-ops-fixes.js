@@ -250,3 +250,57 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
   const css = document.createElement('style'); css.textContent = '.v41-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}'; document.head.appendChild(css);
 })();
+
+/* V42 — Scheduled pickup slips print like the classic "Pick-Up Order" slip (day + window big,
+   customer, address, apartment big, phone, memo) instead of a $0.00 cleaning ticket. */
+(function () {
+  'use strict';
+  const E = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  const isPickupSlip = o => !!o && (o.pickupOnly === true || /scheduled customer pickup/i.test(String(o.items || '')) || (o.status === 'scheduled' && !(o.lineItems || []).length));
+  const addrFor = o => {
+    try { if (typeof v8AddressForOrder === 'function') { const a = v8AddressForOrder(o); if (a) return a; } } catch (_) {}
+    const c = o.customerId && customerById(o.customerId);
+    return (c && (c.addresses || []).find(a => a.id === o.address || a.id === o.addressId)) || (c && (c.addresses || [])[0]) || null;
+  };
+  const unitOf = a => String(a?.apartment || a?.unit || a?.apt || a?.line2 || '').replace(/^(?:apt\.?|apartment|unit|#)\s*/i, '').replace(/\s*\*+\s*$/, '').trim();
+  const fmtPhone = p => { const d = String(p || '').replace(/\D/g, '').slice(-10); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : String(p || ''); };
+  function slipHTML(o) {
+    const c = o.customerId ? customerById(o.customerId) : null, a = addrFor(o), unit = unitOf(a);
+    const dayStr = String(o.dateLabel || o.pickupDate || o.scheduledDate || o.dueDate || '').slice(0, 10);
+    const d = /^\d{4}-\d{2}-\d{2}$/.test(dayStr) ? new Date(dayStr + 'T12:00:00') : null;
+    const weekday = d ? d.toLocaleDateString('en-US', { weekday: 'long' }) : 'Pickup';
+    const dateTxt = d ? d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : '';
+    const win = o.window || o.pickupWindow || '';
+    const driver = o.assignedDriverId && typeof driverById === 'function' ? (driverById(o.assignedDriverId)?.name || '') : '';
+    const name = c ? String(c.name || '').toUpperCase() : String(o.customerName || '').toUpperCase();
+    const street = a ? String(a.street || a.line1 || a.address1 || a.label || '').toUpperCase() : '';
+    const memo = o.pickupNotes || (String(o.items || '').split(' · ').slice(1).join(' · ')) || '';
+    const now = new Date().toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '');
+    return `<section class="v8-print-ticket v42-slip">
+      ${unit ? `<div class="v28210-unit-hero">${E(unit.toUpperCase())}</div>` : ''}
+      <div class="v11-store-name">Hattan Cleaners</div>
+      <div class="v11-store-line">141 3RD AVENUE</div><div class="v11-store-line">BET. 14TH &amp; 15TH</div><div class="v11-store-line">212 477 1740</div>
+      <div class="v42-stamp">${E(now)}</div>
+      <div class="v42-title">Pick-Up Order</div>
+      <div class="v42-num">${E(c?.customerNumber || '')}</div>
+      <div class="v42-day">${E(weekday)}</div>
+      <div class="v42-date">${E(dateTxt)}${win ? ' · ' + E(win) : ''}</div>
+      <div class="v42-row"><span>From: ${E(c?.customerNumber || '')}</span><span>Route: ${E(driver)}</span></div>
+      <div class="v42-name">${E(name)}</div>
+      ${street ? `<div class="v42-addr">${E(street)}</div>` : ''}
+      ${unit ? `<div class="v42-unit">#${E(unit.toUpperCase())}</div>` : ''}
+      ${c?.phone ? `<div class="v42-phone">${E(fmtPhone(c.phone))}</div>` : ''}
+      <div class="v42-memo">Memo: ${E(memo)}</div>
+      ${o.dueDate ? `<div class="v42-ready">Ready: ${E(new Date(o.dueDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: '2-digit', day: '2-digit', year: '2-digit' }))} 04:00 PM</div>` : ''}
+      <div class="v42-id">${E(o.ticket || o.id)}</div>
+    </section>`;
+  }
+  const prev = window.receiptTicketHTML;
+  if (typeof prev === 'function') {
+    // Apartment at the top: as big as fits (long ones like "PH-12B" shrink so they never get cut off).
+    const fitUnit = html => String(html).replace(/<div class="v28210-unit-hero">([^<]*)<\/div>/, (m, t) => { const n = t.replace(/&[a-z#0-9]+;/gi, 'x').length; const px = n <= 3 ? 84 : n === 4 ? 72 : n === 5 ? 60 : n <= 7 ? 46 : 36; return `<div class="v28210-unit-hero" style="font-size:${px}px!important">${t}</div>`; });
+    const wrapped = function (o) { return fitUnit(isPickupSlip(o) ? slipHTML(o) : prev.apply(this, arguments)); };
+    window.receiptTicketHTML = wrapped;
+    try { receiptTicketHTML = wrapped; } catch (_) {}
+  }
+})();
