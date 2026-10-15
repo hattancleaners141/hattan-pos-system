@@ -304,3 +304,82 @@
     try { receiptTicketHTML = wrapped; } catch (_) {}
   }
 })();
+
+/* V43 — Customer profile: "Charge an amount" to the card on file (manager). For old tickets / old
+   A/R balances and for testing card on file. The payment is applied to the oldest unpaid tickets
+   first (like a check payment); anything you choose not to apply is kept as a plain account charge. */
+(function () {
+  'use strict';
+  const E = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  const isMgr = () => { try { return typeof v6IsManager === 'function' && v6IsManager(); } catch (_) { return false; } };
+  const card = c => (c && c.paymentMethods || []).find(p => p.processor === 'clover');
+  const bal = o => (typeof v15OrderBalance === 'function' ? v15OrderBalance(o) : (o.paid ? 0 : Math.max(0, Number(o.total || 0) - Number(o.discount || 0))));
+  const unpaid = c => state.orders.filter(o => o.customerId === c.id && o.status !== 'voided' && bal(o) > .004).sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+  const r2 = n => Math.round(Number(n || 0) * 100) / 100;
+
+  window.v43ChargeAmount = customerId => {
+    const c = customerById(customerId), k = card(c); if (!c) return;
+    if (!k) return toast('No Clover card on file for this customer', false, 'alerttriangle');
+    const open = unpaid(c), total = r2(open.reduce((s, o) => s + bal(o), 0));
+    openPosModal(`<h3>💳 Charge card on file · ${E(c.name)}</h3>
+      <p class="pm-sub">${E(k.brand || 'Card')} •••• ${E(k.last4 || '')} · Open balance: <strong>${money(total)}</strong> on ${open.length} ticket${open.length === 1 ? '' : 's'}</p>
+      <span class="field-label">Amount to charge</span>
+      <input id="v43-amt" class="text-input" type="number" min="0.50" step="0.01" inputmode="decimal" value="${total > 0 ? total.toFixed(2) : ''}" placeholder="0.00" style="font-size:22px;margin-bottom:10px">
+      ${open.length ? `<label class="v16-consent"><input id="v43-apply" type="checkbox" checked><span><strong>Apply to the open balance</strong><small>Pays the oldest unpaid tickets first: ${open.slice(0, 6).map(o => '#' + E(o.ticket || o.id) + ' ' + money(bal(o))).join(', ')}${open.length > 6 ? '…' : ''}</small></span></label>` : '<div class="helper-text">No open balance — this will be a plain account charge (good for a $1 test).</div>'}
+      <span class="field-label" style="margin-top:10px">Note (optional)</span><input id="v43-note" class="text-input" maxlength="60" placeholder="e.g. Old A/R from September, or Test charge">
+      <button class="btn btn-primary btn-block" id="v43-go" style="margin-top:12px" onclick="v43ConfirmCharge('${E(c.id)}')">Charge card</button>
+      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closePosModal()">Cancel</button>`);
+    setTimeout(() => document.getElementById('v43-amt')?.select(), 50);
+  };
+
+  window.v43ConfirmCharge = async customerId => {
+    const c = customerById(customerId), k = card(c); if (!c || !k) return;
+    const amount = r2(document.getElementById('v43-amt')?.value);
+    const apply = !!document.getElementById('v43-apply')?.checked;
+    const note = String(document.getElementById('v43-note')?.value || '').trim();
+    const open = unpaid(c), total = r2(open.reduce((s, o) => s + bal(o), 0));
+    if (!(amount >= 0.5)) return toast('Enter an amount of at least $0.50', false, 'alerttriangle');
+    if (apply && amount > total + .004) return toast(`That's more than the open balance (${money(total)}). Lower the amount or untick "Apply to the open balance".`, false, 'alerttriangle');
+    if (!window.confirm(`Charge ${money(amount)} to ${k.brand || 'card'} •••• ${k.last4 || ''} for ${c.name}?`)) return;
+    const btn = document.getElementById('v43-go'); if (btn) { btn.disabled = true; btn.textContent = 'Charging…'; }
+    const key = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const r = await v16Api('clover-charge-amount', { method: 'POST', body: JSON.stringify({ customerId: c.id, amount, note, idempotencyKey: key }) });
+    if (!r.ok) { if (btn) { btn.disabled = false; btn.textContent = 'Charge card'; } return toast(`Not charged: ${r.data?.error || 'Clover error'}`, false, 'alerttriangle'); }
+    const pay = r.data.payment || {}, now = new Date().toISOString(), by = (typeof v6CurrentStaff === 'function' && v6CurrentStaff()?.name) || 'Staff';
+    const label = `Card on file •••• ${pay.last4 || k.last4 || ''}`;
+    let left = amount; const applied = [];
+    if (apply) {
+      for (const o of open) {
+        if (left <= .004) break;
+        const due = bal(o), part = r2(Math.min(due, left));
+        o.paymentHistory = o.paymentHistory || [];
+        if (o.paymentHistory.some(h => h.processorId === pay.id)) continue;
+        const paidSoFar = typeof v15PaidAmount === 'function' ? v15PaidAmount(o) : Number(o.amountPaid || 0);
+        o.amountPaid = r2(paidSoFar + part);
+        o.paid = bal(o) <= .004; o.paymentStatus = o.paid ? 'paid' : 'partial'; o.paymentMethod = label; if (o.paid) o.paidAt = now;
+        o.paymentProcessor = 'clover'; o.cloverChargeId = o.cloverChargeId || pay.id;
+        o.paymentHistory.unshift({ id: 'pay_' + key + '_' + o.id, type: 'card', amount: part, method: 'card', processor: 'clover', processorId: pay.id, last4: pay.last4 || k.last4, memo: note, at: now, by });
+        if (typeof v8AddActivity === 'function') v8AddActivity(o, 'payment', `Card on file charged ${money(part)} (account payment${note ? ' · ' + note : ''})`);
+        applied.push(`#${o.ticket || o.id} ${money(part)}`); left = r2(left - part);
+      }
+    }
+    c.accountCharges = c.accountCharges || [];
+    c.accountCharges.unshift({ id: key, at: now, amount, chargeId: pay.id, last4: pay.last4 || k.last4, note, appliedTo: applied, by });
+    if (typeof recordSync === 'function') recordSync(`Card on file charged · ${c.name} · ${money(amount)}${applied.length ? ' · applied to ' + applied.join(', ') : ' · account charge'}`);
+    if (typeof saveState === 'function') saveState();
+    openPosModal(`<h3>✅ Charged ${money(amount)}</h3><p class="pm-sub">${E(pay.brand || k.brand || 'Card')} •••• ${E(pay.last4 || k.last4 || '')} · Clover payment ${E(pay.id || '')}</p>
+      ${applied.length ? `<div>Applied to: ${applied.map(E).join(', ')}</div>` : '<div class="helper-text">Recorded as an account charge (not applied to a ticket).</div>'}
+      <button class="btn btn-primary btn-block" style="margin-top:12px" onclick="closePosModal();try{renderV7CustomerProfile()}catch(_){renderPosContent()}">Done</button>`);
+  };
+
+  function inject() {
+    if (state.posNav !== 'customers' || !state.v7CustomerId || !isMgr()) return;
+    const box = document.querySelector('#pos-content .v298-card'); if (!box || box.querySelector('.v43-btn')) return;
+    const c = customerById(state.v7CustomerId); if (!card(c)) return;
+    box.insertAdjacentHTML('beforeend', `<button class="btn btn-primary v43-btn" onclick="v43ChargeAmount('${E(c.id)}')">💳 Charge an amount</button>`);
+  }
+  let q = false;
+  const obs = new MutationObserver(() => { if (!q) { q = true; requestAnimationFrame(() => { q = false; try { inject(); } catch (e) { console.error('V43', e); } }); } });
+  const start = () => obs.observe(document.body, { childList: true, subtree: true });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
