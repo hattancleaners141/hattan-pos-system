@@ -63,7 +63,8 @@
     const out = [];
     parts.forEach(p => {
       const sub = p.split(/\band\b(?=\s+(?:\d+|one|two|three|four|five|a|an|the|his|her|my)?\s*(?:pair\s+of\s+)?(?:\w+\s+){0,2}?(?:jeans?|pants?|trousers?|slacks?|dress|gown|skirt|jacket|blazer|coat|parka|shirt|blouse|sweater|suit|vest)\b)/);
-      sub.forEach(s => { s = s.trim(); if (s) out.push(s); });
+      // V44: also split "…and shorten sleeves on the jacket" (a new job verb after "and").
+      sub.flatMap(x => x.split(/\band\b(?=\s+(?:then\s+)?(?:shorten|lengthen|hem|take|let|taper|replace|fix|sew|patch|repair|adjust|remove|add|reattach|change)\b)/)).forEach(s => { s = s.trim(); if (s) out.push(s); });
     });
     return out;
   }

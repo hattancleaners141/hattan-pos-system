@@ -12,7 +12,7 @@ const V16_SHARED_KEYS = [
   'automatedTexts','rackSettings','printSettings','customerMemos',
   'interfaceSettings','garmentCatalog','materials','nextConveyorNumber',
   'deliveryBatches','nextDeliveryBatch','nextCustomerNumber','hardwareProfile',
-  'v14InstructionOrder','legacyRevenueHistory','migrationAudit','staffAlerts',
+  'v14InstructionOrder','legacyRevenueHistory','migrationAudit','staffAlerts','tailorHandoffs',
 ];
 
 const v16Live = {
