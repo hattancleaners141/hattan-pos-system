@@ -52,7 +52,7 @@
       s: [
         ['side', N('counter'), ['Tap "Counter" in the left menu.', 'Toca "Counter" en el menú de la izquierda.'], ['nav:Counter']],
         ['main', 'input[placeholder^="Name / phone / address"]', ['Tap the big white box. Type the customer\'s name OR phone number OR apartment.', 'Toca el cuadro blanco grande. Escribe el nombre O el teléfono O el apartamento del cliente.'], ['i:Name / phone / address / customer #']],
-        ['main', '.v282-result', ['Names show up under the box. Tap the right customer.', 'Aparecen nombres debajo. Toca el cliente correcto.'], ['w:Matthew Raber · 212-555-0101']],
+        ['main', '.v282-result', ['Names show up under the box. Tap the right customer.', 'Aparecen nombres debajo. Toca el cliente correcto.'], ['w:Zoe Quinn · 212-555-0142']],
         ['main', OC('v287Dropoff('), ['Now pick what you are doing: Pick Up, Drop Off, or View Customer Profile.', 'Ahora elige: Pick Up (recoger), Drop Off (dejar) o View Customer Profile (ver perfil).'], ['b:Pick Up', 'b:Drop Off', 'w:View Customer Profile']]
       ] },
     { id: 'newcust', cat: 'start', ic: '➕', t: ['Add a new customer', 'Agregar un cliente nuevo'],
@@ -85,7 +85,7 @@
       s: [
         ['side', N('counter'), ['Tap "Counter" in the left menu.', 'Toca "Counter" en el menú de la izquierda.'], ['nav:Counter']],
         ['main', 'input[placeholder^="Name / phone / address"]', ['Type the customer\'s name or phone number.', 'Escribe el nombre o teléfono del cliente.'], ['i:Name / phone / address / customer #']],
-        ['main', '.v282-result', ['Names show up under the box. Tap the right customer.', 'Aparecen nombres debajo. Toca el cliente correcto.'], ['w:Matthew Raber · 212-555-0101']],
+        ['main', '.v282-result', ['Names show up under the box. Tap the right customer.', 'Aparecen nombres debajo. Toca el cliente correcto.'], ['w:Zoe Quinn · 212-555-0142']],
         ['main', OC('v287Dropoff('), ['Tap "Drop Off".', 'Toca "Drop Off".'], ['b:Drop Off']],
         ['main', OC("v282Service('dryclean'"), ['Tap "Dry Cleaning".', 'Toca "Dry Cleaning".'], ['b:Dry Cleaning']],
         ['main', OC('v282Garment('), ['Tap the kind of clothing. Example: Pants, Blouse, Suit.', 'Toca el tipo de ropa. Ejemplo: Pants (pantalón), Blouse (blusa), Suit (traje).'], ['w:Pants / Trousers $12.95', 'w:Blouse $13.95']],
@@ -180,7 +180,7 @@
       k: 'schedule driver pickup pick up from home apartment come get collect appointment calendar programar chofer recoger casa cita',
       s: [
         ['main', 'input[placeholder^="Name / phone / address"]', ['On the Counter, type the customer\'s name or phone.', 'En el Counter, escribe el nombre o teléfono del cliente.'], ['i:Name / phone / address / customer #']],
-        ['main', '.v282-result', ['Names show up under the box. Tap the right customer.', 'Aparecen nombres debajo. Toca el cliente correcto.'], ['w:Matthew Raber · 212-555-0101']],
+        ['main', '.v282-result', ['Names show up under the box. Tap the right customer.', 'Aparecen nombres debajo. Toca el cliente correcto.'], ['w:Zoe Quinn · 212-555-0142']],
         ['main', OC('v287SchedulePickup('), ['Tap "Schedule Driver Pickup".', 'Toca "Schedule Driver Pickup".'], ['w:Schedule Driver Pickup']],
         ['pop', null, ['Pick the day and time. Check the address. Tap Save. A Pick-Up Order slip prints for the driver.', 'Elige día y hora. Revisa la dirección. Toca Save. Se imprime una hoja para el chofer.'], ['w:Tue Nov 3', 'w:9–11 AM', 'b:Save']]
       ] },
@@ -191,7 +191,7 @@
       s: [
         ['side', N('counter'), ['Tap "Counter" in the left menu.', 'Toca "Counter" en el menú de la izquierda.'], ['nav:Counter']],
         ['main', 'input[placeholder^="Name / phone / address"]', ['Type the customer\'s name or phone (or scan their ticket).', 'Escribe el nombre o teléfono (o escanea su ticket).'], ['i:Name / phone / address / customer #']],
-        ['main', '.v282-result', ['Names show up under the box. Tap the right customer.', 'Aparecen nombres debajo. Toca el cliente correcto.'], ['w:Matthew Raber · 212-555-0101']],
+        ['main', '.v282-result', ['Names show up under the box. Tap the right customer.', 'Aparecen nombres debajo. Toca el cliente correcto.'], ['w:Zoe Quinn · 212-555-0142']],
         ['main', OC('v287Pickup('), ['Tap "Pick Up".', 'Toca "Pick Up".'], ['b:Pick Up']],
         ['main', OC('v39ProfilePickup('), ['Their tickets show. It says where the clothes are (Rack 45). Tap "Pick Up" on the ticket.', 'Salen sus tickets. Dice dónde está la ropa (Rack 45). Toca "Pick Up" en el ticket.'], ['b:Pick Up']],
         ['pop', '.v39-pk input[type=checkbox]', ['Tick EVERY ticket the customer is taking home.', 'Marca CADA ticket que el cliente se lleva.'], ['c:☑ #700001 · Ready · Rack 45']],
@@ -210,8 +210,8 @@
       s: [
         ['main', null, ['Open the customer\'s profile.', 'Abre el perfil del cliente.'], ['w:View Customer Profile']],
         ['main', OC('v43ChargeAmount('), ['Tap "💳 Charge an amount". (Managers only.)', 'Toca "💳 Charge an amount". (Solo gerentes.)'], ['w:💳 Charge an amount']],
-        ['pop', null, ['Type the amount and what it is for. Check it twice!', 'Escribe el monto y para qué es. ¡Revísalo dos veces!'], ['i:$ 0.00', 'i:Old ticket #…']],
-        ['pop', null, ['Tap Charge. You will see Approved or Declined.', 'Toca Charge. Verás Approved (aprobado) o Declined (rechazado).'], ['b:Charge']]
+        ['pop', '#v43-amt', ['Type the amount and what it is for. Check it twice!', 'Escribe el monto y para qué es. ¡Revísalo dos veces!'], ['i:$ 0.00', 'i:Old ticket #…']],
+        ['pop', '#v43-go', ['Tap "Charge card". You will see Approved or Declined.', 'Toca "Charge card". Verás Approved (aprobado) o Declined (rechazado).'], ['b:Charge card']]
       ] },
     { id: 'batch', cat: 'pick', ic: '🗂️', t: ['Charge all unpaid tickets on file cards (batch)', 'Cobrar todos los tickets sin pagar (en grupo)'],
       k: 'batch charge all autopay unpaid cards on file payments end of day charge everyone cobrar todos grupo autopago',
@@ -248,7 +248,7 @@
       k: 'print reprint copy ticket receipt again printer plus + key lost ticket imprimir reimprimir copia otra vez impresora tecla mas',
       s: [
         ['side', N('orders'), ['Tap "Ticket List" in the left menu.', 'Toca "Ticket List" en el menú.'], ['nav:Ticket List']],
-        ['main', '#pos-content tr[data-order-id]', ['Tap the ticket you want. It turns BLUE.', 'Toca el ticket que quieres. Se pone AZUL.'], ['c:#700001 · Matthew Raber']],
+        ['main', '#pos-content tr[data-order-id]', ['Tap the ticket you want. It turns BLUE.', 'Toca el ticket que quieres. Se pone AZUL.'], ['c:#700001 · Zoe Quinn']],
         ['key', null, ['Press the + key on the keyboard. Only that ticket prints.', 'Presiona la tecla + del teclado. Se imprime solo ese ticket.'], ['k:+']],
         ['main', OC('posPrintReceipt('), ['Or tap "Reprint" on that ticket.', 'O toca "Reprint" en ese ticket.'], ['w:Reprint']],
         ['key', null, ['Tip: pressing + on any screen reprints the LAST ticket printed.', 'Consejo: presionar + en cualquier pantalla reimprime el ÚLTIMO ticket.'], ['k:+']]
@@ -550,7 +550,7 @@
     if (!T) return;
     const t = T.topic, s = t.s[T.i], w = tourUI(), b = w.querySelector('.v45-bubble');
     T.el = null; T.scrolled = false;
-    const isInput = s[1] && /input|textarea|#v44-(cq|type)|#v3-conveyor|rack-input/.test(s[1]);
+    const isInput = !!s[1] && /input|textarea|#v44-(cq|type)|#v3-conveyor|rack-input|#v43-amt/.test(s[1]) && !/checkbox/.test(s[1]);
     b.innerHTML = `<div class="v45-b-top"><span class="v45-b-num">${T.i + 1}</span><small>${tx('step')} ${T.i + 1} ${tx('of')} ${t.s.length} · ${E(t.t[L()])}</small></div>
       <p>${E(s[2][L()])}</p>${s[3] && s[3].length ? `<div class="v45-mocks">${s[3].map(mock).join('<span class="v45-arrow">→</span>')}</div>` : ''}
       <div class="v45-b-hint" id="v45-hint">${s[1] ? (isInput ? tx('typeit') : tx('tapit')) : ''}</div>
@@ -567,8 +567,16 @@
     T.el = el;
     const hint = document.getElementById('v45-hint');
     if (!el) {
-      ring.style.display = 'none'; hand.style.display = 'none'; dim.style.display = 'block';
-      b.classList.add('v45-b-center'); b.style.left = b.style.top = '';
+      ring.style.display = 'none'; hand.style.display = 'none';
+      const pm = document.querySelector('.pos-modal-overlay.show .pos-modal, .pos-modal-overlay.show > div');
+      const pr = pm && pm.getBoundingClientRect();
+      if (pr && pr.width) { // a pop-up is open: sit beside it, never on top of it
+        dim.style.display = 'none'; b.classList.remove('v45-b-center');
+        const bw = Math.min(420, innerWidth - 24); b.style.width = bw + 'px'; const bh = b.offsetHeight || 240;
+        const left = pr.right + 18 + bw <= innerWidth - 12 ? pr.right + 18 : pr.left - bw - 18 >= 12 ? pr.left - bw - 18 : innerWidth - bw - 12;
+        const top = Math.max(12, Math.min(pr.top, innerHeight - bh - 12));
+        b.style.left = left + 'px'; b.style.top = top + 'px';
+      } else { dim.style.display = 'block'; b.classList.add('v45-b-center'); b.style.left = b.style.top = ''; }
       if (hint && s[1]) hint.textContent = tx('notyet');
       return;
     }
