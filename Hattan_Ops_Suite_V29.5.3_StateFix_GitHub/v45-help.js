@@ -394,6 +394,12 @@
       ] }
   ];
 
+  /* short how-to videos (recorded on a demo copy with pretend customers) */
+  const VIDEOS = ['dropdry', 'pickup', 'find', 'print', 'ready', 'rackassign', 'tag', 'cardlink', 'chargeamount', 'textyes'];
+  const VIDEO_V = 1;
+  const hasVideo = id => VIDEOS.includes(id);
+  const videoSrc = id => `help-videos/${id}.mp4?v=${VIDEO_V}`;
+
   /* screen → topics shown first ("On this screen") */
   const SCREEN = {
     login: ['signin', 'clock'], counter: ['dropdry', 'pickup', 'find', 'paynow', 'hold', 'tailorcheckout'], customers: ['newcust', 'pickup', 'chargeamount', 'cardlink'],
@@ -407,7 +413,7 @@
   const UI_T = {
     help: ['Help', 'Ayuda'], title: ['How do I…?', '¿Cómo hago…?'], ph: ['Type what you want to do… (example: pick up, print, charge card)', 'Escribe lo que quieres hacer… (ejemplo: recoger, imprimir, cobrar)'],
     onscreen: ['On this screen', 'En esta pantalla'], all: ['All guides', 'Todas las guías'], showme: ['👉 Show me on the screen', '👉 Muéstrame en la pantalla'],
-    read: ['🔊 Read to me', '🔊 Léemelo'], stop: ['⏹ Stop reading', '⏹ Parar'], back: ['← Back', '← Atrás'], close: ['Close', 'Cerrar'], step: ['Step', 'Paso'],
+    read: ['🔊 Read to me', '🔊 Léemelo'], watch: ['▶ Watch video', '▶ Ver video'], hidevid: ['✕ Close video', '✕ Cerrar video'], videos: ['Watch & learn (videos)', 'Mira y aprende (videos)'], vidnote: ['Video is in English. The glowing button shows where to tap.', 'El video está en inglés. El botón que brilla muestra dónde tocar.'], stop: ['⏹ Stop reading', '⏹ Parar'], back: ['← Back', '← Atrás'], close: ['Close', 'Cerrar'], step: ['Step', 'Paso'],
     of: ['of', 'de'], next: ['Next ▶', 'Siguiente ▶'], prev: ['◀ Back', '◀ Atrás'], done: ['Finish ✓', 'Terminar ✓'], quit: ['✕ Stop', '✕ Salir'],
     none: ['No guide found for that. Try one or two simple words, like "pick up", "print", "rack" or "card".', 'No encontramos una guía. Prueba una o dos palabras, como "recoger", "imprimir", "rack" o "tarjeta".'],
     ask: ['Still stuck? Ask a manager or call 212-477-1740.', '¿Sigues con dudas? Pregunta al gerente o llama al 212-477-1740.'],
@@ -470,7 +476,8 @@
   let P = { open: false, q: '', topic: null };
   const topicById = id => TOPICS.find(t => t.id === id);
   function currentScreen() { try { if (!state.session || !state.session.loggedIn) return 'login'; return state.posNav || 'counter'; } catch (_) { return 'counter'; } }
-  function card(t) { return `<button class="v45-card" onclick="v45Help.topic('${t.id}')"><span class="v45-card-ic">${t.ic}</span><span>${E(t.t[L()])}</span><b>›</b></button>`; }
+  function card(t) { return `<button class="v45-card" onclick="v45Help.topic('${t.id}')"><span class="v45-card-ic">${t.ic}</span><span>${E(t.t[L()])}</span>${hasVideo(t.id) ? '<em class="v45-vbadge">▶ video</em>' : ''}<b>›</b></button>`; }
+  function vcard(t) { return `<button class="v45-vcard" onclick="v45Help.topic('${t.id}',true)"><span class="v45-vplay">▶</span><span class="v45-card-ic">${t.ic}</span><span>${E(t.t[L()])}</span></button>`; }
   function homeHTML() {
     const q = P.q.trim();
     if (q) {
@@ -479,16 +486,21 @@
     }
     const here = (SCREEN[currentScreen()] || []).map(topicById).filter(Boolean);
     return (here.length ? `<h4 class="v45-h">📍 ${tx('onscreen')}</h4><div class="v45-list">${here.map(card).join('')}</div>` : '') +
+      `<h4 class="v45-h">🎬 ${tx('videos')}</h4><div class="v45-vgrid">${VIDEOS.map(topicById).filter(Boolean).map(vcard).join('')}</div>` +
       `<h4 class="v45-h">📚 ${tx('all')}</h4>` + CATS.map(([id, ic, en, es]) => `<details class="v45-cat" ${id === 'drop' || id === 'pick' ? 'open' : ''}><summary><span>${ic}</span>${E(L() ? es : en)}<small>${TOPICS.filter(t => t.cat === id).length}</small></summary><div class="v45-list">${TOPICS.filter(t => t.cat === id).map(card).join('')}</div></details>`).join('') +
       `<div class="v45-ask">📞 ${tx('ask')}<br><small>${tx('tip')}</small></div>`;
   }
   function topicHTML(t) {
     return `<div class="v45-topic"><button class="v45-back" onclick="v45Help.home()">${tx('back')}</button>
       <h3 class="v45-tt"><span>${t.ic}</span>${E(t.t[L()])}</h3>
-      <div class="v45-actions"><button class="v45-show" onclick="v45Help.tour('${t.id}')">${tx('showme')}</button><button class="v45-read" id="v45-read" onclick="v45Help.read('${t.id}')">${tx('read')}</button></div>
+      ${hasVideo(t.id) ? `<div class="v45-video" id="v45-video" ${P.video ? '' : 'hidden'}>${P.video ? videoHTML(t.id) : ''}</div>` : ''}
+      <div class="v45-actions">${hasVideo(t.id) ? `<button class="v45-watch" id="v45-watch" onclick="v45Help.video('${t.id}')">${P.video ? tx('hidevid') : tx('watch')}</button>` : ''}<button class="v45-show" onclick="v45Help.tour('${t.id}')">${tx('showme')}</button><button class="v45-read" id="v45-read" onclick="v45Help.read('${t.id}')">${tx('read')}</button></div>
       <ol class="v45-steps">${t.s.map((s, i) => `<li class="v45-step"><div class="v45-num">${i + 1}</div><div class="v45-body"><p>${E(s[2][L()])}</p>${s[3] && s[3].length ? `<div class="v45-mocks">${s[3].map(mock).join('<span class="v45-arrow">→</span>')}</div>` : ''}</div><div class="v45-where">${map(s[0])}<small>${E(UI_T.where[s[0]][L()])}</small></div></li>`).join('')}</ol>
       <button class="v45-show v45-show-bottom" onclick="v45Help.tour('${t.id}')">${tx('showme')}</button>
       <div class="v45-ask">📞 ${tx('ask')}</div></div>`;
+  }
+  function videoHTML(id) {
+    return `<video src="${videoSrc(id)}" controls autoplay playsinline preload="auto"></video>${L() ? `<small>${tx('vidnote')}</small>` : ''}`;
   }
   function render() {
     let el = document.getElementById('v45-help');
@@ -583,7 +595,9 @@
     // they already did the next step too (e.g. typed a name, then tapped it) → skip ahead
     if (nx && nx[1]) { try { if (e.target.closest(nx[1])) { setTimeout(() => { if (T && T.i === at) { T.i = at + 1; api.step(1); } }, 450); return; } } catch (_) {} }
     if (!T.el || T.input) return;
-    if (T.el.contains(e.target)) setTimeout(() => { if (T && T.i === at) api.step(1); }, 450);
+    // any button of the right kind counts (e.g. "Wool" when "Standard" is the one glowing)
+    let ok = T.el.contains(e.target); if (!ok) { try { ok = !!e.target.closest(T.topic.s[at][1]); } catch (_) {} }
+    if (ok) setTimeout(() => { if (T && T.i === at) api.step(1); }, 450);
   }
   function onKey(e) {
     if (e.key === 'F1') { e.preventDefault(); api.open(); return; }
@@ -599,15 +613,21 @@
   /* ---------------- public api ---------------- */
   const api = {
     open(q) { P.open = true; P.topic = null; if (typeof q === 'string') P.q = q; render(); },
-    close() { P.open = false; stopSpeak(); render(); },
-    home() { P.topic = null; stopSpeak(); render(); },
-    topic(id) { P.topic = id; stopSpeak(); render(); const sc = document.getElementById('v45-scroll'); if (sc) sc.scrollTop = 0; },
+    close() { P.open = false; P.video = false; stopSpeak(); render(); },
+    home() { P.topic = null; P.video = false; stopSpeak(); render(); },
+    video(id) {
+      P.video = !P.video; const box = document.getElementById('v45-video'), btn = document.getElementById('v45-watch'); if (!box) return;
+      if (P.video) { stopSpeak(); box.innerHTML = videoHTML(id); box.hidden = false; box.scrollIntoView({ block: 'nearest' }); }
+      else { box.innerHTML = ''; box.hidden = true; }
+      if (btn) btn.textContent = P.video ? tx('hidevid') : tx('watch');
+    },
+    topic(id, play) { P.topic = id; P.video = !!(play && hasVideo(id)); stopSpeak(); render(); const sc = document.getElementById('v45-scroll'); if (sc) sc.scrollTop = 0; },
     q(v) { P.q = v; refreshResults(); },
     lang(l) { HL = l; stopSpeak(); render(); },
     read(id) { const t = topicById(id); if (t) speak(t); },
     tour(id) {
       const t = topicById(id); if (!t) return;
-      P.open = false; stopSpeak(); render();
+      P.open = false; P.video = false; stopSpeak(); render();
       T = { topic: t, i: 0 }; tourStep();
       clearInterval(api._timer); api._timer = setInterval(place, 350);
     },
