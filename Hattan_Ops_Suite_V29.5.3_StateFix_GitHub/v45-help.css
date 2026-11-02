@@ -115,3 +115,10 @@
 .v45-video { margin: 0 0 14px; background: #000; border-radius: 16px; overflow: hidden; }
 .v45-video video { display: block; width: 100%; max-height: 62vh; background: #000; }
 .v45-video small { display: block; color: #fff; padding: 8px 12px; font-size: 14px; }
+
+/* training videos */
+.v45-lgrid .v45-vcard { background: #1d3f73; }
+.v45-lgrid .v45-vcard:hover, .v45-lgrid .v45-vcard:focus { background: #27518f; }
+.v45-lgrid .v45-vplay { color: #1d3f73; }
+.v45-pts { list-style: none; padding: 0; margin: 0 0 6px; display: grid; gap: 8px; }
+.v45-pts li { background: #fff; border: 2px solid #e3e7e0; border-left: 8px solid #1f8f4e; border-radius: 12px; padding: 12px 14px; font-size: 19px; font-weight: 600; line-height: 1.35; }
