@@ -398,7 +398,7 @@
   /* short how-to videos (recorded on a demo copy with pretend customers) */
   const VIDEOS = ['dropdry', 'pickup', 'find', 'print', 'ready', 'rackassign', 'tag', 'cardlink', 'chargeamount', 'textyes'];
   const VIDEO_V = 1;
-  const hasVideo = id => VIDEOS.includes(id) || /^learn_/.test(id);
+  const hasVideo = id => VIDEOS.includes(id) || /^learn/.test(id);
   const videoSrc = id => `help-videos/${id}.mp4?v=${VIDEO_V}`;
 
   /* screen → topics shown first ("On this screen") */
@@ -569,7 +569,7 @@
   }
   function sayCue(text) { try { const u = new SpeechSynthesisUtterance(text); const v = pickVoice(); if (v) u.voice = v; u.lang = 'en-US'; u.rate = 1; speechSynthesis.speak(u); } catch (_) {} }
   function wireVoice(id) {
-    const vid = document.querySelector('#v45-video video'); if (!vid || !/^learn_/.test(id)) return;
+    const vid = document.querySelector('#v45-video video'); if (!vid || !/^learn/.test(id)) return;
     VOICE.last = -1;
     const load = VOICE.cues[id] ? Promise.resolve(VOICE.cues[id]) : fetch(`help-videos/${id}.json?v=${VIDEO_V}`).then(r => r.json()).then(j => (VOICE.cues[id] = j.cues || [])).catch(() => []);
     const idxAt = (cues, t) => { let k = -1; for (let i = 0; i < cues.length; i++) if (cues[i].t <= t + 0.05) k = i; return k; };
