@@ -398,7 +398,7 @@
   /* short how-to videos (recorded on a demo copy with pretend customers) */
   const VIDEOS = ['dropdry', 'pickup', 'find', 'print', 'ready', 'rackassign', 'tag', 'cardlink', 'chargeamount', 'textyes'];
   const VIDEO_V = 1;
-  const hasVideo = id => VIDEOS.includes(id) || /^learn_/.test(id);
+  const hasVideo = id => VIDEOS.includes(id) || /^learn/.test(id);
   const videoSrc = id => `help-videos/${id}.mp4?v=${VIDEO_V}`;
 
   /* screen → topics shown first ("On this screen") */
@@ -414,7 +414,7 @@
   const UI_T = {
     help: ['Help', 'Ayuda'], title: ['How do I…?', '¿Cómo hago…?'], ph: ['Type what you want to do… (example: pick up, print, charge card)', 'Escribe lo que quieres hacer… (ejemplo: recoger, imprimir, cobrar)'],
     onscreen: ['On this screen', 'En esta pantalla'], all: ['All guides', 'Todas las guías'], showme: ['👉 Show me on the screen', '👉 Muéstrame en la pantalla'],
-    read: ['🔊 Read to me', '🔊 Léemelo'], watch: ['▶ Watch video', '▶ Ver video'], hidevid: ['✕ Close video', '✕ Cerrar video'], videos: ['Watch & learn (videos)', 'Mira y aprende (videos)'], training: ['Training videos — dry cleaning know-how', 'Videos de entrenamiento'], keypts: ['Key points', 'Puntos clave'], voiceon: ['🔊 Voice: ON', '🔊 Voz: SÍ'], voiceoff: ['🔇 Voice: OFF', '🔇 Voz: NO'], vidnote: ['Video is in English. The glowing button shows where to tap.', 'El video está en inglés. El botón que brilla muestra dónde tocar.'], stop: ['⏹ Stop reading', '⏹ Parar'], back: ['← Back', '← Atrás'], close: ['Close', 'Cerrar'], step: ['Step', 'Paso'],
+    read: ['🔊 Read to me', '🔊 Léemelo'], watch: ['▶ Watch video', '▶ Ver video'], hidevid: ['✕ Close video', '✕ Cerrar video'], videos: ['Watch & learn (videos)', 'Mira y aprende (videos)'], training: ['Training videos — dry cleaning know-how', 'Videos de entrenamiento'], training2: ['Intermediate training — back room & packing', 'Entrenamiento intermedio — taller y empaque'], keypts: ['Key points', 'Puntos clave'], voiceon: ['🔊 Voice: ON', '🔊 Voz: SÍ'], voiceoff: ['🔇 Voice: OFF', '🔇 Voz: NO'], vidnote: ['Video is in English. The glowing button shows where to tap.', 'El video está en inglés. El botón que brilla muestra dónde tocar.'], stop: ['⏹ Stop reading', '⏹ Parar'], back: ['← Back', '← Atrás'], close: ['Close', 'Cerrar'], step: ['Step', 'Paso'],
     of: ['of', 'de'], next: ['Next ▶', 'Siguiente ▶'], prev: ['◀ Back', '◀ Atrás'], done: ['Finish ✓', 'Terminar ✓'], quit: ['✕ Stop', '✕ Salir'],
     none: ['No guide found for that. Try one or two simple words, like "pick up", "print", "rack" or "card".', 'No encontramos una guía. Prueba una o dos palabras, como "recoger", "imprimir", "rack" o "tarjeta".'],
     ask: ['Still stuck? Ask a manager or call 212-477-1740.', '¿Sigues con dudas? Pregunta al gerente o llama al 212-477-1740.'],
@@ -460,6 +460,30 @@
       pts: ['Stain: “We’ll do our best, but we can’t promise.”', 'Ready: due date is on the ticket; we text if they said yes.', 'Faster: mark RUSH and check with the manager.', 'Silk/wool cost more: extra time, care and hand pressing.', 'Not really dry: special liquid instead of water.', 'Problems, money or refunds: get the manager. Never promise.'] }
   ];
   LEARN.forEach(l => TOPICS.push(Object.assign({ cat: 'learn', learn: true, s: [] }, l)));
+  const LEARN2 = [
+    { id: 'learn2_tagging', ic: '🏷️', t: ['How to tag garments the right way', 'Cómo etiquetar la ropa'], k: 'tag tagging staple stapler pin safety pin tag gun where to put tag label collar waistband suit both pieces etiquetar grapa alfiler',
+      pts: ['Staple or pin through the LABEL — never through the fabric.', 'Shirts: collar label or side-seam care label. Pants/skirts: back waistband label.', 'Jackets & suits: brand label inside the neck. Tag BOTH suit pieces, same number.', 'Sweaters, knits, silk & dresses: safety pin to the label.', 'No label: safety pin through an inside seam, or loop on a belt loop/button.', 'Check: clear number that matches the ticket, one tag per piece, tug to test.'] },
+    { id: 'learn2_tagmistakes', ic: '⚠️', t: ['Tagging mistakes that damage clothes', 'Errores al etiquetar que dañan la ropa'], k: 'tagging mistakes damage holes snag run staple silk satin leather suede knit lining rust rip tag off wrong number lost piece errores dano agujeros',
+      pts: ['Staples in silk, satin, leather, suede or knits make permanent holes and runs.', 'Never staple through two layers (lining + outside).', 'Metal staples can rust in wash & press — keep them small and in the label.', 'Tags on the outside can leave press marks.', 'Messy numbers and untagged suit pieces get lost or go to the wrong customer.', 'Use a staple remover. Never rip a tag. Made a hole? Tell a manager right away.'] },
+    { id: 'learn2_inspect', ic: '🔍', t: ['Checking clothes at drop-off', 'Revisar la ropa al recibirla'], k: 'inspect inspection check drop off pockets pen buttons holes tears moth stains belts hood fur collar count pieces damage defective note revisar bolsillos botones',
+      pts: ['Empty every pocket — pens ruin whole loads. Give back money, cards, keys.', 'Check buttons, holes, tears, moth holes, worn elbows, collars and hems.', 'Look for stains and ask what they are.', 'Belts, hoods, fur collars, removable linings: tag them or give them back.', 'Count pieces with the customer.', 'Found something? Show the customer, tap Stain/Defective, write a short note.'] },
+    { id: 'learn2_assembly', ic: '🧩', t: ['Matching clothes to tickets (assembly)', 'Juntar la ropa con su ticket'], k: 'assembly assemble match matching tag ticket count pieces colors sets together missing piece mark ready rack juntar ordenar contar',
+      pts: ['Read the tag → find the same ticket (type the tag # in Ticket List).', 'Count pieces and check every color against the ticket.', 'Suit jacket and pants always stay together.', 'Mark ready and rack it only when every piece is there.', 'Missing piece? Don’t bag it — check cleaning & pressing, then tell a manager.'] },
+    { id: 'learn2_qc', ic: '🔎', t: ['Final check before bagging', 'Revisión final antes de embolsar'], k: 'final check quality control qc inspect before bagging stain still there pressing crease double crease buttons threads lint inside out smell revision final calidad',
+      pts: ['Stain still there → back for re-spotting; can’t come out → manager / Do Over text.', 'Pants: one sharp crease. Collars smooth. No shiny marks.', 'All buttons there, none cracked.', 'Snip threads, lint roll dark clothes, turn right side out.', 'Should smell clean.', 'If it’s not right, it doesn’t get bagged.'] },
+    { id: 'learn2_suit', ic: '🤵', t: ['How to check and pack a suit', 'Cómo revisar y empacar un traje'], k: 'suit pack packing suit jacket pants vest hanger wide hanger crease lapels shoulders match color navy black check empacar traje gancho',
+      pts: ['Jacket and pants: same tag number, same fabric and color (navy vs black!).', 'Pants: one sharp crease, even cuffs. Lapels roll softly, no shine.', 'Wide suit hanger — never a thin wire hanger.', 'Pants folded over the bar on the crease; jacket shoulders on the hanger ends.', 'Top button closed, pocket flaps out, vest under the jacket.', 'One suit, one hanger, one bag, ticket outside.'] },
+    { id: 'learn2_packorder', ic: '📦', t: ['Packing a mixed order: what goes first', 'Empacar una orden mixta: qué va primero'], k: 'pack packing order mixed bag which first last back front coat dress suit pants shirts silk delicate folded sweater comforter tie empacar orden primero ultimo',
+      pts: ['Back to front: heavy & long first, light & delicate last.', 'Order: coats → dresses & long items → suits & jackets → pants & skirts → shirts → silk & delicates.', 'Folded items and boxed shirts in their own box or bag — never under hangers.', 'Comforters and blankets in their own bag. Ties & scarves on a hanger.', 'Hooks face the same way, count = ticket, ticket on the outside.'] },
+    { id: 'learn2_shirtpack', ic: '👔', t: ['Packing shirts: hanger or box', 'Empacar camisas: gancho o caja'], k: 'shirt shirts pack packing hanger box boxed folded fold shirt board collar buttons starch camisas gancho caja doblar',
+      pts: ['Hanger: one shirt per hanger, top & middle buttons closed, collar flat, sleeves straight.', 'All shirts face the same way, together in one bag.', 'Box: fold on a shirt board, every button closed, collar standing up.', 'Add collar support and band; stack all facing the same way.', 'Check starch, buttons, collar stains, and count = ticket.'] },
+    { id: 'learn2_delivery', ic: '🚚', t: ['Getting delivery orders ready', 'Preparar órdenes para entrega'], k: 'delivery deliver driver van bag label apartment address paid unpaid scan route photo proof entrega chofer bolsa apartamento',
+      pts: ['Order complete and checked.', 'Paid or card on file (unpaid ones show in To Be Done).', 'Check address and apartment # on the ticket.', 'Name and big apartment # on the outside of every bag; folded items in their own labeled bag.', 'Scan every bag in Delivery; driver photos the drop-off.', 'In the van: hang long pieces, group by building, nothing on the floor.'] },
+    { id: 'learn2_mixup', ic: '🔁', t: ['Wrong garment to the wrong customer: how to fix it', 'Ropa equivocada al cliente equivocado'], k: 'wrong garment wrong customer mix up mixed up gave wrong order swapped backtrack find owner tag number search fix mistake picked up wrong delivered wrong ropa equivocada cliente equivocado',
+      pts: ['Say sorry, stay calm, never argue or blame.', 'Read the tag on the wrong garment and type the tag # in Ticket List to find the real owner.', 'Open Detail to confirm pieces and colors.', 'The first customer’s own garment is usually still here — check the rack near the other order.', 'Wrongly marked picked up/delivered? Ticket List → Backtrack, type the reason, then mark ready and re-rack.', 'Add a note and tell a manager; they arrange the swap.', 'Prevent it: check name, ticket # and tag #, count pieces, scan the barcode.'] }
+  ];
+  LEARN2.forEach(l => TOPICS.push(Object.assign({ cat: 'learn', learn: true, level: 2, s: [] }, l)));
+
 
   const IDX = TOPICS.map(t => ({ t, title: norm(t.t[0] + ' ' + t.t[1]).split(' '), words: norm(t.k + ' ' + t.t[0] + ' ' + t.t[1]).split(' '), full: norm(t.k + ' ' + t.t[0] + ' ' + t.t[1]) }));
   function search(q) {
@@ -514,7 +538,8 @@
     const here = (SCREEN[currentScreen()] || []).map(topicById).filter(Boolean);
     return (here.length ? `<h4 class="v45-h">📍 ${tx('onscreen')}</h4><div class="v45-list">${here.map(card).join('')}</div>` : '') +
       `<h4 class="v45-h">🎬 ${tx('videos')}</h4><div class="v45-vgrid">${VIDEOS.map(topicById).filter(Boolean).map(vcard).join('')}</div>` +
-      `<h4 class="v45-h">🎓 ${tx('training')}</h4><div class="v45-vgrid v45-lgrid">${TOPICS.filter(t => t.learn).map(vcard).join('')}</div>` +
+      `<h4 class="v45-h">🎓 ${tx('training')}</h4><div class="v45-vgrid v45-lgrid">${TOPICS.filter(t => t.learn && !t.level).map(vcard).join('')}</div>` +
+      `<h4 class="v45-h">🏅 ${tx('training2')}</h4><div class="v45-vgrid v45-lgrid v45-l2">${TOPICS.filter(t => t.learn && t.level === 2).map(vcard).join('')}</div>` +
       `<h4 class="v45-h">📚 ${tx('all')}</h4>` + CATS.filter(c => c[0] !== 'learn').map(([id, ic, en, es]) => `<details class="v45-cat" ${id === 'drop' || id === 'pick' ? 'open' : ''}><summary><span>${ic}</span>${E(L() ? es : en)}<small>${TOPICS.filter(t => t.cat === id).length}</small></summary><div class="v45-list">${TOPICS.filter(t => t.cat === id).map(card).join('')}</div></details>`).join('') +
       `<div class="v45-ask">📞 ${tx('ask')}<br><small>${tx('tip')}</small></div>`;
   }
@@ -544,7 +569,7 @@
   }
   function sayCue(text) { try { const u = new SpeechSynthesisUtterance(text); const v = pickVoice(); if (v) u.voice = v; u.lang = 'en-US'; u.rate = 1; speechSynthesis.speak(u); } catch (_) {} }
   function wireVoice(id) {
-    const vid = document.querySelector('#v45-video video'); if (!vid || !/^learn_/.test(id)) return;
+    const vid = document.querySelector('#v45-video video'); if (!vid || !/^learn/.test(id)) return;
     VOICE.last = -1;
     const load = VOICE.cues[id] ? Promise.resolve(VOICE.cues[id]) : fetch(`help-videos/${id}.json?v=${VIDEO_V}`).then(r => r.json()).then(j => (VOICE.cues[id] = j.cues || [])).catch(() => []);
     const idxAt = (cues, t) => { let k = -1; for (let i = 0; i < cues.length; i++) if (cues[i].t <= t + 0.05) k = i; return k; };
