@@ -19,6 +19,7 @@
               'i:Text' typing box · 'k:+' keyboard key · 'c:Text' small option · 'y:Text' yellow button
      ------------------------------------------------------------------ */
   const CATS = [
+    ['learn', '🎓', 'Training videos (dry cleaning know-how)', 'Videos de entrenamiento'],
     ['start', '🚪', 'Getting started', 'Para empezar'],
     ['drop', '🧥', 'Drop off (new ticket)', 'Dejar ropa (ticket nuevo)'],
     ['pick', '🛍️', 'Pick up & payment', 'Recoger y pagar'],
@@ -397,7 +398,7 @@
   /* short how-to videos (recorded on a demo copy with pretend customers) */
   const VIDEOS = ['dropdry', 'pickup', 'find', 'print', 'ready', 'rackassign', 'tag', 'cardlink', 'chargeamount', 'textyes'];
   const VIDEO_V = 1;
-  const hasVideo = id => VIDEOS.includes(id);
+  const hasVideo = id => VIDEOS.includes(id) || /^learn_/.test(id);
   const videoSrc = id => `help-videos/${id}.mp4?v=${VIDEO_V}`;
 
   /* screen → topics shown first ("On this screen") */
@@ -413,7 +414,7 @@
   const UI_T = {
     help: ['Help', 'Ayuda'], title: ['How do I…?', '¿Cómo hago…?'], ph: ['Type what you want to do… (example: pick up, print, charge card)', 'Escribe lo que quieres hacer… (ejemplo: recoger, imprimir, cobrar)'],
     onscreen: ['On this screen', 'En esta pantalla'], all: ['All guides', 'Todas las guías'], showme: ['👉 Show me on the screen', '👉 Muéstrame en la pantalla'],
-    read: ['🔊 Read to me', '🔊 Léemelo'], watch: ['▶ Watch video', '▶ Ver video'], hidevid: ['✕ Close video', '✕ Cerrar video'], videos: ['Watch & learn (videos)', 'Mira y aprende (videos)'], vidnote: ['Video is in English. The glowing button shows where to tap.', 'El video está en inglés. El botón que brilla muestra dónde tocar.'], stop: ['⏹ Stop reading', '⏹ Parar'], back: ['← Back', '← Atrás'], close: ['Close', 'Cerrar'], step: ['Step', 'Paso'],
+    read: ['🔊 Read to me', '🔊 Léemelo'], watch: ['▶ Watch video', '▶ Ver video'], hidevid: ['✕ Close video', '✕ Cerrar video'], videos: ['Watch & learn (videos)', 'Mira y aprende (videos)'], training: ['Training videos — dry cleaning know-how', 'Videos de entrenamiento'], keypts: ['Key points', 'Puntos clave'], voiceon: ['🔊 Voice: ON', '🔊 Voz: SÍ'], voiceoff: ['🔇 Voice: OFF', '🔇 Voz: NO'], vidnote: ['Video is in English. The glowing button shows where to tap.', 'El video está en inglés. El botón que brilla muestra dónde tocar.'], stop: ['⏹ Stop reading', '⏹ Parar'], back: ['← Back', '← Atrás'], close: ['Close', 'Cerrar'], step: ['Step', 'Paso'],
     of: ['of', 'de'], next: ['Next ▶', 'Siguiente ▶'], prev: ['◀ Back', '◀ Atrás'], done: ['Finish ✓', 'Terminar ✓'], quit: ['✕ Stop', '✕ Salir'],
     none: ['No guide found for that. Try one or two simple words, like "pick up", "print", "rack" or "card".', 'No encontramos una guía. Prueba una o dos palabras, como "recoger", "imprimir", "rack" o "tarjeta".'],
     ask: ['Still stuck? Ask a manager or call 212-477-1740.', '¿Sigues con dudas? Pregunta al gerente o llama al 212-477-1740.'],
@@ -434,6 +435,32 @@
     return d + (a.length - i) + (b.length - j) <= 1;
   }
   function swap1(a, b) { if (a.length !== b.length) return false; const d = []; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d.push(i); return d.length === 2 && d[1] === d[0] + 1 && a[d[0]] === b[d[1]] && a[d[1]] === b[d[0]]; }
+
+  /* ---------------- training videos (knowledge, not buttons) ---------------- */
+  const LEARN = [
+    { id: 'learn_how', ic: '🧼', t: ['How dry cleaning works', 'Cómo funciona la limpieza en seco'], k: 'how dry cleaning works process solvent water steps machine what is dry cleaning really dry como funciona proceso solvente',
+      pts: ['Dry cleaning uses a special liquid called solvent — not water.', 'Water can shrink wool, spot silk and make colors run. Solvent is gentle.', '6 steps: check & tag → treat stains → clean → dry → press → inspect & bag.', 'The solvent is filtered, cleaned and used again.'] },
+    { id: 'learn_fabrics1', ic: '🧶', t: ['Fabrics part 1: natural fabrics', 'Telas parte 1: naturales'], k: 'fabric fabrics material cotton linen wool silk cashmere natural difference tela telas algodon lino lana seda',
+      pts: ['Cotton: strong plant fabric, most shirts, can shrink in hot water.', 'Linen: from flax, cool and crisp, wrinkles very easily.', 'Wool: from sheep, suits & coats, shrinks with hot water → dry clean.', 'Silk: shiny and light, water can spot it → dry clean.', 'Cashmere: from goats, very soft, handle gently.', 'Pick wool/silk/cashmere/linen on the ticket. Not sure? Ask a manager.'] },
+    { id: 'learn_fabrics2', ic: '🧵', t: ['Fabrics part 2: man-made fabrics', 'Telas parte 2: sintéticas'], k: 'fabric fabrics polyester nylon rayon viscose acetate spandex elastane lycra blend synthetic leather suede fur tela sintetica',
+      pts: ['Polyester: plastic-based, few wrinkles, too much heat makes it shiny or melts it.', 'Nylon: strong and light, low heat.', 'Rayon / viscose: very weak when wet, can shrink → dry clean.', 'Acetate: shiny linings, low heat, perfume and nail polish remover can melt it.', 'Spandex: stretch — heat can ruin it.', 'Blends: treat like the most delicate fabric in the mix.', 'Leather, suede, fur, wedding gowns: ask a manager.'] },
+    { id: 'learn_stains', ic: '🔎', t: ['What stains look like', 'Cómo se ven las manchas'], k: 'stain stains spot oil grease coffee tea wine sweat yellow ink blood makeup lipstick grass rust wax gum sugar invisible come out mancha manchas',
+      pts: ['Always ask: What is it? How old is it?', 'Oil: dark and see-through. Coffee/tea/wine: ring at the edge. Sweat: yellow at arms and collar.', 'Ink: blue/black lines near pockets. Blood: red-brown, heat sets it. Rust: orange dots.', 'Soda, juice and white wine can be invisible now and turn brown with heat.', 'Say: “We will do our best, but we can’t promise.” Tap Stain on the ticket.', 'Customer tip: blot, don’t rub. No hot water, iron or dryer.'] },
+    { id: 'learn_shirts1', ic: '👔', t: ['Wash & press vs dry clean shirts', 'Camisas: lavar y planchar vs en seco'], k: 'shirt shirts wash and press laundered laundry dry clean difference starch hanger box crisp camisa camisas lavar planchar almidon',
+      pts: ['Wash & press: washed in water, pressed on a hot shirt machine, very crisp, costs less.', 'Dry clean: cleaned in solvent, pressed gently, softer, less shrinking and fading, costs more.', 'Water is best for sweat. Solvent is best for oil and delicate fabric.', 'Ask: which starch (none, light, medium, heavy) and hanger or box.'] },
+    { id: 'learn_shirts2', ic: '❓', t: ['Why only shirts get wash & press', 'Por qué solo camisas se lavan y planchan'], k: 'why only shirts cant cannot can not wash and press pants suit jacket sweater dress coat why not launder other garments clothes por que solo camisas',
+      pts: ['The shirt press machine is shaped like a shirt — other clothes don’t fit it.', 'Cotton shirts handle water, high heat and starch.', 'Suits and jackets have linings and padding that bubble and pucker in water.', 'Wool shrinks, sweaters lose shape, dresses can run colors.', 'Shirts → wash & press. Almost everything else → dry clean.'] },
+    { id: 'learn_shirts3', ic: '🚦', t: ['Which shirts can be washed & pressed', 'Qué camisas se pueden lavar y planchar'], k: 'which shirts colors fabric wash and press silk linen rayon dark colors stretch buttons mother of pearl embroidery label safe que camisas colores',
+      pts: ['✅ Yes: white & light cotton, cotton-poly blends, oxford/poplin/broadcloth, business shirts.', '⚠️ Careful: very dark or bright colors, linen, stretch shirts, mother-of-pearl or fancy buttons.', '🛑 Dry clean: silk, rayon/viscose, embroidery/beads/sequins/lace, thin, vintage or designer.', 'Fitted blouses don’t fit the shirt machine → dry clean.', 'When in doubt: dry clean and ask a manager.'] },
+    { id: 'learn_nodryclean', ic: '🚫', t: ['Clothes that cannot be dry cleaned', 'Ropa que no se puede limpiar en seco'], k: 'cannot dry clean can not not allowed pleather faux leather vinyl glued sequins beads rubber print plastic rug bath mat raincoat leather suede fur no se puede',
+      pts: ['Fake leather, vinyl and coated fabrics can peel, crack or go stiff.', 'Glued sequins, beads and gems can fall off.', 'Rubber, plastic, foil and glitter prints can crack or melt.', 'Rubber-backed bath mats and rugs crumble.', 'Circle with an X on the label = do not dry clean.', 'Real leather, suede, fur: special cleaner — ask a manager. Never guess.'] },
+    { id: 'learn_labels', ic: '🏷️', t: ['Reading care labels', 'Leer etiquetas de cuidado'], k: 'care label labels symbols tag instructions circle triangle square iron tub dry clean only wash etiqueta simbolos',
+      pts: ['Tub = washing (dots = how hot). Triangle = bleach. Square = drying. Iron = ironing. Circle = dry clean.', 'Any symbol with an X means NO.', '“Dry clean” = suggested. “Dry clean ONLY” = must.', 'Labels can be wrong — when unsure, ask a manager.'] },
+    { id: 'learn_faq', ic: '💬', t: ['Top 10 customer questions', 'Las 10 preguntas más comunes'], k: 'customer questions answers faq what to say ask how long ready rush shrink price cost why expensive delivery pickup preguntas clientes respuestas',
+      pts: ['Stain: “We’ll do our best, but we can’t promise.”', 'Ready: due date is on the ticket; we text if they said yes.', 'Faster: mark RUSH and check with the manager.', 'Silk/wool cost more: extra time, care and hand pressing.', 'Not really dry: special liquid instead of water.', 'Problems, money or refunds: get the manager. Never promise.'] }
+  ];
+  LEARN.forEach(l => TOPICS.push(Object.assign({ cat: 'learn', learn: true, s: [] }, l)));
+
   const IDX = TOPICS.map(t => ({ t, title: norm(t.t[0] + ' ' + t.t[1]).split(' '), words: norm(t.k + ' ' + t.t[0] + ' ' + t.t[1]).split(' '), full: norm(t.k + ' ' + t.t[0] + ' ' + t.t[1]) }));
   function search(q) {
     let nq = norm(q); if (!nq) return [];
@@ -487,10 +514,20 @@
     const here = (SCREEN[currentScreen()] || []).map(topicById).filter(Boolean);
     return (here.length ? `<h4 class="v45-h">📍 ${tx('onscreen')}</h4><div class="v45-list">${here.map(card).join('')}</div>` : '') +
       `<h4 class="v45-h">🎬 ${tx('videos')}</h4><div class="v45-vgrid">${VIDEOS.map(topicById).filter(Boolean).map(vcard).join('')}</div>` +
-      `<h4 class="v45-h">📚 ${tx('all')}</h4>` + CATS.map(([id, ic, en, es]) => `<details class="v45-cat" ${id === 'drop' || id === 'pick' ? 'open' : ''}><summary><span>${ic}</span>${E(L() ? es : en)}<small>${TOPICS.filter(t => t.cat === id).length}</small></summary><div class="v45-list">${TOPICS.filter(t => t.cat === id).map(card).join('')}</div></details>`).join('') +
+      `<h4 class="v45-h">🎓 ${tx('training')}</h4><div class="v45-vgrid v45-lgrid">${TOPICS.filter(t => t.learn).map(vcard).join('')}</div>` +
+      `<h4 class="v45-h">📚 ${tx('all')}</h4>` + CATS.filter(c => c[0] !== 'learn').map(([id, ic, en, es]) => `<details class="v45-cat" ${id === 'drop' || id === 'pick' ? 'open' : ''}><summary><span>${ic}</span>${E(L() ? es : en)}<small>${TOPICS.filter(t => t.cat === id).length}</small></summary><div class="v45-list">${TOPICS.filter(t => t.cat === id).map(card).join('')}</div></details>`).join('') +
       `<div class="v45-ask">📞 ${tx('ask')}<br><small>${tx('tip')}</small></div>`;
   }
+  function learnHTML(t) {
+    return `<div class="v45-topic"><button class="v45-back" onclick="v45Help.home()">${tx('back')}</button>
+      <h3 class="v45-tt"><span>${t.ic}</span>${E(t.t[L()])}</h3>
+      <div class="v45-video" id="v45-video">${videoHTML(t.id)}</div>
+      <div class="v45-actions"><button class="v45-read" id="v45-voice" onclick="v45Help.voice()">${VOICE.on ? tx('voiceon') : tx('voiceoff')}</button><button class="v45-read" id="v45-read" onclick="v45Help.read('${t.id}')">${tx('read')}</button></div>
+      <h4 class="v45-h">✅ ${tx('keypts')}</h4><ul class="v45-pts">${t.pts.map(p => `<li>${E(p)}</li>`).join('')}</ul>
+      <div class="v45-ask">📞 ${tx('ask')}</div></div>`;
+  }
   function topicHTML(t) {
+    if (t.learn) return learnHTML(t);
     return `<div class="v45-topic"><button class="v45-back" onclick="v45Help.home()">${tx('back')}</button>
       <h3 class="v45-tt"><span>${t.ic}</span>${E(t.t[L()])}</h3>
       ${hasVideo(t.id) ? `<div class="v45-video" id="v45-video" ${P.video ? '' : 'hidden'}>${P.video ? videoHTML(t.id) : ''}</div>` : ''}
@@ -498,6 +535,28 @@
       <ol class="v45-steps">${t.s.map((s, i) => `<li class="v45-step"><div class="v45-num">${i + 1}</div><div class="v45-body"><p>${E(s[2][L()])}</p>${s[3] && s[3].length ? `<div class="v45-mocks">${s[3].map(mock).join('<span class="v45-arrow">→</span>')}</div>` : ''}</div><div class="v45-where">${map(s[0])}<small>${E(UI_T.where[s[0]][L()])}</small></div></li>`).join('')}</ol>
       <button class="v45-show v45-show-bottom" onclick="v45Help.tour('${t.id}')">${tx('showme')}</button>
       <div class="v45-ask">📞 ${tx('ask')}</div></div>`;
+  }
+  /* voice for training videos: reads each caption as the video reaches it */
+  const VOICE = { on: (() => { try { return localStorage.getItem('v45voice') !== 'off'; } catch (_) { return true; } })(), cues: {}, last: -1 };
+  function pickVoice() {
+    try { const vs = speechSynthesis.getVoices().filter(v => /^en(-|_)US/i.test(v.lang) || /^en/i.test(v.lang));
+      return vs.find(v => /natural/i.test(v.name) && /aria|jenny|guy|ava|andrew|emma/i.test(v.name)) || vs.find(v => /natural|online/i.test(v.name)) || vs.find(v => /^en(-|_)US/i.test(v.lang)) || vs[0] || null; } catch (_) { return null; }
+  }
+  function sayCue(text) { try { const u = new SpeechSynthesisUtterance(text); const v = pickVoice(); if (v) u.voice = v; u.lang = 'en-US'; u.rate = 1; speechSynthesis.speak(u); } catch (_) {} }
+  function wireVoice(id) {
+    const vid = document.querySelector('#v45-video video'); if (!vid || !/^learn_/.test(id)) return;
+    VOICE.last = -1;
+    const load = VOICE.cues[id] ? Promise.resolve(VOICE.cues[id]) : fetch(`help-videos/${id}.json?v=${VIDEO_V}`).then(r => r.json()).then(j => (VOICE.cues[id] = j.cues || [])).catch(() => []);
+    const idxAt = (cues, t) => { let k = -1; for (let i = 0; i < cues.length; i++) if (cues[i].t <= t + 0.05) k = i; return k; };
+    load.then(cues => {
+      vid.addEventListener('timeupdate', () => {
+        if (!VOICE.on || vid.paused) return; const k = idxAt(cues, vid.currentTime);
+        if (k > VOICE.last) { VOICE.last = k; sayCue(cues[k].text); }
+      });
+      vid.addEventListener('seeking', () => { stopSpeak(); VOICE.last = idxAt(cues, vid.currentTime) - 1; });
+      vid.addEventListener('pause', () => { stopSpeak(); VOICE.last = idxAt(cues, vid.currentTime) - 1; });
+      vid.addEventListener('ended', () => { VOICE.last = -1; });
+    });
   }
   function videoHTML(id) {
     return `<video src="${videoSrc(id)}" controls autoplay playsinline preload="auto"></video>${L() ? `<small>${tx('vidnote')}</small>` : ''}`;
@@ -524,7 +583,7 @@
     try {
       if (speechSynthesis.speaking) { stopSpeak(); if (btn) btn.textContent = tx('read'); return; }
       const lang = L() ? 'es-US' : 'en-US';
-      const parts = [t.t[L()]].concat(t.s.map((s, i) => `${tx('step')} ${i + 1}. ${s[2][L()]}`));
+      const parts = t.learn ? [t.t[L()]].concat(t.pts) : [t.t[L()]].concat(t.s.map((s, i) => `${tx('step')} ${i + 1}. ${s[2][L()]}`));
       parts.forEach((p, i) => { const u = new SpeechSynthesisUtterance(p); u.lang = lang; u.rate = 0.9; if (i === parts.length - 1) u.onend = () => { const b = document.getElementById('v45-read'); if (b) b.textContent = tx('read'); }; speechSynthesis.speak(u); });
       if (btn) btn.textContent = tx('stop');
     } catch (_) { if (window.toast) toast('Read aloud is not available on this device', false); }
@@ -629,7 +688,8 @@
       else { box.innerHTML = ''; box.hidden = true; }
       if (btn) btn.textContent = P.video ? tx('hidevid') : tx('watch');
     },
-    topic(id, play) { P.topic = id; P.video = !!(play && hasVideo(id)); stopSpeak(); render(); const sc = document.getElementById('v45-scroll'); if (sc) sc.scrollTop = 0; },
+    topic(id, play) { P.topic = id; P.video = !!(play && hasVideo(id)); stopSpeak(); render(); const sc = document.getElementById('v45-scroll'); if (sc) sc.scrollTop = 0; wireVoice(id); },
+    voice() { VOICE.on = !VOICE.on; try { localStorage.setItem('v45voice', VOICE.on ? 'on' : 'off'); } catch (_) {} if (!VOICE.on) stopSpeak(); else { const vid = document.querySelector('#v45-video video'); if (vid) VOICE.last = -1 + (function () { const c = VOICE.cues[P.topic] || []; let k = -1; for (let i = 0; i < c.length; i++) if (c[i].t <= vid.currentTime) k = i; return k; })(); } const b = document.getElementById('v45-voice'); if (b) b.textContent = VOICE.on ? tx('voiceon') : tx('voiceoff'); },
     q(v) { P.q = v; refreshResults(); },
     lang(l) { HL = l; stopSpeak(); render(); },
     read(id) { const t = topicById(id); if (t) speak(t); },
