@@ -397,7 +397,7 @@
 
   /* short how-to videos (recorded on a demo copy with pretend customers) */
   const VIDEOS = ['dropdry', 'pickup', 'find', 'print', 'ready', 'rackassign', 'tag', 'cardlink', 'chargeamount', 'textyes'];
-  const VIDEO_V = 1;
+  const VIDEO_V = 2;
   const hasVideo = id => VIDEOS.includes(id) || /^learn/.test(id);
   const videoSrc = id => `help-videos/${id}.mp4?v=${VIDEO_V}`;
 
@@ -549,6 +549,7 @@
       <div class="v45-video" id="v45-video">${videoHTML(t.id)}</div>
       <div class="v45-actions"><button class="v45-read" id="v45-voice" onclick="v45Help.voice()">${VOICE.on ? tx('voiceon') : tx('voiceoff')}</button><button class="v45-read" id="v45-read" onclick="v45Help.read('${t.id}')">${tx('read')}</button></div>
       <h4 class="v45-h">✅ ${tx('keypts')}</h4><ul class="v45-pts">${t.pts.map(p => `<li>${E(p)}</li>`).join('')}</ul>
+      <p class="v45-credit">Narration voice: LibriTTS (CC BY 4.0), made with Piper text-to-speech.</p>
       <div class="v45-ask">📞 ${tx('ask')}</div></div>`;
   }
   function topicHTML(t) {
@@ -561,27 +562,12 @@
       <button class="v45-show v45-show-bottom" onclick="v45Help.tour('${t.id}')">${tx('showme')}</button>
       <div class="v45-ask">📞 ${tx('ask')}</div></div>`;
   }
-  /* voice for training videos: reads each caption as the video reaches it */
-  const VOICE = { on: (() => { try { return localStorage.getItem('v45voice') !== 'off'; } catch (_) { return true; } })(), cues: {}, last: -1 };
-  function pickVoice() {
-    try { const vs = speechSynthesis.getVoices().filter(v => /^en(-|_)US/i.test(v.lang) || /^en/i.test(v.lang));
-      return vs.find(v => /natural/i.test(v.name) && /aria|jenny|guy|ava|andrew|emma/i.test(v.name)) || vs.find(v => /natural|online/i.test(v.name)) || vs.find(v => /^en(-|_)US/i.test(v.lang)) || vs[0] || null; } catch (_) { return null; }
-  }
-  function sayCue(text) { try { const u = new SpeechSynthesisUtterance(text); const v = pickVoice(); if (v) u.voice = v; u.lang = 'en-US'; u.rate = 1; speechSynthesis.speak(u); } catch (_) {} }
+  /* training videos have narration recorded into the file; the Voice button just mutes/unmutes it */
+  const VOICE = { on: (() => { try { return localStorage.getItem('v45voice') !== 'off'; } catch (_) { return true; } })() };
   function wireVoice(id) {
     const vid = document.querySelector('#v45-video video'); if (!vid || !/^learn/.test(id)) return;
-    VOICE.last = -1;
-    const load = VOICE.cues[id] ? Promise.resolve(VOICE.cues[id]) : fetch(`help-videos/${id}.json?v=${VIDEO_V}`).then(r => r.json()).then(j => (VOICE.cues[id] = j.cues || [])).catch(() => []);
-    const idxAt = (cues, t) => { let k = -1; for (let i = 0; i < cues.length; i++) if (cues[i].t <= t + 0.05) k = i; return k; };
-    load.then(cues => {
-      vid.addEventListener('timeupdate', () => {
-        if (!VOICE.on || vid.paused) return; const k = idxAt(cues, vid.currentTime);
-        if (k > VOICE.last) { VOICE.last = k; sayCue(cues[k].text); }
-      });
-      vid.addEventListener('seeking', () => { stopSpeak(); VOICE.last = idxAt(cues, vid.currentTime) - 1; });
-      vid.addEventListener('pause', () => { stopSpeak(); VOICE.last = idxAt(cues, vid.currentTime) - 1; });
-      vid.addEventListener('ended', () => { VOICE.last = -1; });
-    });
+    vid.muted = !VOICE.on; vid.volume = 1;
+    const p = vid.play && vid.play(); if (p && p.catch) p.catch(() => {}); // if the browser blocks autoplay, the ▶ button still works
   }
   function videoHTML(id) {
     return `<video src="${videoSrc(id)}" controls autoplay playsinline preload="auto"></video>${L() ? `<small>${tx('vidnote')}</small>` : ''}`;
@@ -714,7 +700,7 @@
       if (btn) btn.textContent = P.video ? tx('hidevid') : tx('watch');
     },
     topic(id, play) { P.topic = id; P.video = !!(play && hasVideo(id)); stopSpeak(); render(); const sc = document.getElementById('v45-scroll'); if (sc) sc.scrollTop = 0; wireVoice(id); },
-    voice() { VOICE.on = !VOICE.on; try { localStorage.setItem('v45voice', VOICE.on ? 'on' : 'off'); } catch (_) {} if (!VOICE.on) stopSpeak(); else { const vid = document.querySelector('#v45-video video'); if (vid) VOICE.last = -1 + (function () { const c = VOICE.cues[P.topic] || []; let k = -1; for (let i = 0; i < c.length; i++) if (c[i].t <= vid.currentTime) k = i; return k; })(); } const b = document.getElementById('v45-voice'); if (b) b.textContent = VOICE.on ? tx('voiceon') : tx('voiceoff'); },
+    voice() { VOICE.on = !VOICE.on; try { localStorage.setItem('v45voice', VOICE.on ? 'on' : 'off'); } catch (_) {} const vid = document.querySelector('#v45-video video'); if (vid) vid.muted = !VOICE.on; const b = document.getElementById('v45-voice'); if (b) b.textContent = VOICE.on ? tx('voiceon') : tx('voiceoff'); },
     q(v) { P.q = v; refreshResults(); },
     lang(l) { HL = l; stopSpeak(); render(); },
     read(id) { const t = topicById(id); if (t) speak(t); },
