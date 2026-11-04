@@ -427,7 +427,7 @@
 
   /* ---------------- search ---------------- */
   const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\+/g, ' plus ').replace(/[^a-z0-9中文 ]+/g, ' ').replace(/\s+/g, ' ').trim();
-  const STOP = new Set('how do i to a an the what where can my is it in on of for and or with we you me please want need does should when this that como hago para el la los las un una de que en y mi se puedo quiero necesito por con al lo le'.split(' '));
+  const STOP = new Set('make made customer customers wants wanted asks asked how do i to a an the what where can my is it in on of for and or with we you me please want need does should when this that como hago para el la los las un una de que en y mi se puedo quiero necesito por con al lo le'.split(' '));
   const SYN = { pickup: 'pick up', pu: 'pick up', dropoff: 'drop off', recoger: 'pick up', dejar: 'drop off', cobrar: 'charge', tarjeta: 'card', imprimir: 'print', etiqueta: 'tag', lista: 'ready', cc: 'card', reprint: 'print', receipt: 'receipt', hem: 'alteration hem', sastre: 'tailor' };
   function lev1(a, b) { // edit distance ≤ 1?
     if (Math.abs(a.length - b.length) > 1) return false; let i = 0, j = 0, d = 0;
