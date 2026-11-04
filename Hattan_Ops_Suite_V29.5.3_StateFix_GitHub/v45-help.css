@@ -126,3 +126,6 @@
 .v45-l2 .v45-vcard:hover, .v45-l2 .v45-vcard:focus { background: #864a18; }
 .v45-l2 .v45-vplay { color: #6b3a12; }
 .v45-credit { margin: 6px 2px 0; font-size: 12px; color: #6b756e; }
+.v45-l3 .v45-vcard { background: #5b2a6e; }
+.v45-l3 .v45-vcard:hover, .v45-l3 .v45-vcard:focus { background: #713789; }
+.v45-l3 .v45-vplay { color: #5b2a6e; }
