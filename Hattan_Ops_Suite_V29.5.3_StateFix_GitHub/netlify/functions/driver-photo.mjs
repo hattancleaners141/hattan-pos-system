@@ -4,6 +4,9 @@ import { assertSameOrigin, handleError, json, methodNotAllowed, parseBody, requi
 import { readStore } from './lib/app.mjs';
 import { allowedOrders, photoPath, putPhoto } from './lib/delivery.mjs';
 
+// V47: open tickets + anything changed in the last 2 days, with their customers.
+const ROUTE_SCOPE = { workingOrders: 2, orderCustomers: true };
+
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') return methodNotAllowed('POST');
   try {
@@ -14,7 +17,7 @@ export const handler = async (event) => {
     const kind = ['delivery', 'pickup', 'attempt'].includes(body.kind) ? body.kind : null;
     if (!kind) throw new HttpError(400, 'Unknown photo type');
     const ids = [...new Set((Array.isArray(body.orderIds) ? body.orderIds : []).map(String))].slice(0, 30);
-    const { payload } = await readStore();
+    const { payload } = await readStore(ROUTE_SCOPE);
     allowedOrders(payload, session.sub, ids, kind === 'pickup' ? 'pickup' : 'delivery');
     const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(body.image || ''));
     if (!m) throw new HttpError(400, 'Photo must be a JPEG');

@@ -14,7 +14,7 @@ const isPlaceholder = e => /^hattancleaners141\+c[^@]+@gmail\.com$/i.test(String
 
 async function customerFor(t) {
   const { customerId, sig } = readCardLink(t);
-  const { payload } = await readStore();
+  const { payload } = await readStore({ customerIds: [customerId] });
   const c = (payload.customers || []).find(x => String(x?.id) === customerId);
   if (!c) throw new HttpError(404, 'This link is not valid');
   return { c, sig };
@@ -57,10 +57,10 @@ export const handler = async (event) => {
       x.cardSavedVia = { method: 'text-link', at };
       if (isPlaceholder(cloverEmail)) x.cloverEmail = cloverEmail;
       else if (!x.email) x.email = cloverEmail;
-    });
+    }, { customerIds: [String(c.id)] });
     // Confirmation text ("card ending 1234 is saved") — only goes out if they opted in to texts.
     try {
-      const { payload } = await readStore();
+      const { payload } = await readStore({ customerIds: [String(c.id)] });
       const fresh = (payload.customers || []).find(y => String(y.id) === String(c.id)) || c;
       const enabled = payload?.interfaceSettings?.sms?.enabled?.cardSaved !== false;
       if (enabled && card.last4) await deliver({ keys: [`cardSaved:${c.id}:${card.last4}`], kind: 'cardSaved', customer: fresh, body: compose('cardSaved', { customer: fresh, card }), sentBy: 'customer-text-link', event });

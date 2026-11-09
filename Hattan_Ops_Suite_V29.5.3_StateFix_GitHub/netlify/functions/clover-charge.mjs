@@ -1,4 +1,5 @@
 import { assertSameOrigin, cloverRequest, handleError, insertRows, json, methodNotAllowed, parseBody, randomId, requireSession, safePaymentResponse, selectRows, storeId, updateRows, HttpError } from './lib/shared.mjs';
+import { readStore } from './lib/records.mjs';
 
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') return methodNotAllowed('POST');
@@ -11,8 +12,8 @@ export const handler = async (event) => {
     const amount = Math.round(Number(body.amount || 0) * 100);
     if (!customerId || !orderId) throw new HttpError(400, 'Customer and ticket are required');
     if (!Number.isSafeInteger(amount) || amount < 1 || amount > 99_999_999) throw new HttpError(400, 'Charge amount is invalid');
-    const stateRows = await selectRows('pos_state', `store_id=eq.${encodeURIComponent(storeId())}&limit=1`, 'payload');
-    const order = (stateRows?.[0]?.payload?.orders || []).find(item => String(item?.id) === orderId);
+    const { payload: stateNow } = await readStore({ orderIds: [orderId] });
+    const order = (stateNow.orders || []).find(item => String(item?.id) === orderId);
     if (!order) throw new HttpError(409, 'This ticket is not present in the latest shared store data');
     if (String(order.customerId || '') !== customerId) throw new HttpError(409, 'The ticket does not belong to the selected customer');
     if (order.paid === true || order.paymentStatus === 'paid') throw new HttpError(409, 'This ticket is already marked paid');

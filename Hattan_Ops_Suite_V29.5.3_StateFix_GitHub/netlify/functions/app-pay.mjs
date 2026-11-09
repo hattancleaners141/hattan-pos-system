@@ -16,7 +16,7 @@ export const handler = async (event) => {
     if (!ids.length) throw new HttpError(400, 'Choose what to pay');
     const attempt = String(body.attemptId || randomId()).replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
 
-    const { payload: store } = await readStore();
+    const { payload: store } = await readStore({ customerIds: [account.customer_id], orderIds: ids });
     const customer = (store.customers || []).find(c => String(c.id) === String(account.customer_id));
     if (!customer) throw new HttpError(409, 'Your account is not ready yet');
     const vault = await vaultCard(customer.id);
@@ -87,7 +87,7 @@ export const handler = async (event) => {
             const pts = Math.max(0, Math.round(Number(cur.total || 0) - Number(cur.discount || 0)));
             c.points = Math.round(Number(c.points || 0)) + pts; cur.pointsAwarded = true; cur._lastPtsEarned = pts;
           }
-        });
+        }, { customerIds: [customer.id], orderIds: [orderId] });
       } catch (e) { console.error('app-pay store update (charge recorded in payment_transactions)', e.message); }
     }
     const failed = results.filter(r => !r.ok);

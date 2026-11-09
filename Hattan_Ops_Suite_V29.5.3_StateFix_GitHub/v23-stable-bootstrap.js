@@ -70,7 +70,8 @@
       if (sessionResponse.ok && sessionResponse.data?.authenticated) {
         v16SetSession(sessionResponse.data.staff);
         v16Live.realtimeToken = sessionResponse.data.realtimeToken || '';
-        const stateResponse = await bounded(v16PullState(false), 12000, 'Store data sync timed out');
+        // V47: the first load pages through every customer and open ticket — allow time on slow Wi-Fi.
+        const stateResponse = await bounded(v16PullState(false), 90000, 'Store data sync timed out');
         if (stateResponse?.ok && !stateResponse.data?.exists && sessionResponse.data.staff?.manager) {
           await bounded(v16InitializeSharedStore(true, false), 12000, 'Store initialization timed out');
         }

@@ -5,6 +5,7 @@
 import crypto from 'node:crypto';
 import { env, assertSameOrigin, handleError, json, methodNotAllowed, parseBody, requestIp, selectRows, insertRows, updateRows, storeId, HttpError } from './lib/shared.mjs';
 import { requireAccount, appCookie, clearAppCookie, codeHash, isPlaceholderEmail, newCode, normEmail, readStore, sendLoginEmail, validEmail, updateAccount } from './lib/app.mjs';
+import { customersByEmail } from './lib/records.mjs';
 
 const sid = () => encodeURIComponent(storeId());
 const hourAgo = () => new Date(Date.now() - 3600e3).toISOString();
@@ -65,7 +66,7 @@ export const handler = async (event) => {
       if (account?.status === 'deleted') { await updateAccount(account.id, { status: 'new', customer_id: null, match_customer_id: null, match_note: null }); account = { ...account, status: 'new', customer_id: null }; }
       if (!account) {
         // Link automatically when exactly one POS customer already has this email.
-        const { payload } = await readStore();
+        const { payload } = await readStore({ customerRows: () => customersByEmail(email) });
         const matches = (payload.customers || []).filter(c => c && !isPlaceholderEmail(c.email) && String(c.email || '').trim().toLowerCase() === email);
         const linked = matches.length === 1 ? matches[0] : null;
         const created = await insertRows('app_accounts', [{

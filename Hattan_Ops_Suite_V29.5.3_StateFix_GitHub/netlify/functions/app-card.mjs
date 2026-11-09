@@ -23,7 +23,7 @@ async function setPosCard(customerId, card) {
     if (!c) return;
     c.paymentMethods = (c.paymentMethods || []).filter(p => p.processor !== 'clover');
     if (card) c.paymentMethods.unshift(card);
-  });
+  }, { customerIds: [customerId] });
 }
 
 export const handler = async (event) => {
@@ -48,7 +48,7 @@ export const handler = async (event) => {
     if (body.consent !== true) throw new HttpError(400, 'Please confirm you authorize charges to this card');
     const token = String(body.token || '').trim();
     if (!/^clv_[A-Za-z0-9]+$/.test(token)) throw new HttpError(400, 'The card could not be verified. Please re-enter it.');
-    const { payload } = await readStore();
+    const { payload } = await readStore({ customerIds: [customerId] });
     const c = (payload.customers || []).find(x => String(x.id) === String(customerId));
     if (!c) throw new HttpError(409, 'Your account is not ready yet');
     if (current?.clover_customer_id && !current?.clover_source_id) throw new HttpError(409, 'Please call us to update your card');

@@ -10,6 +10,7 @@
 import { assertSameOrigin, env, handleError, insertRows, json, methodNotAllowed, parseBody, requireSession, selectRows, storeId, updateRows, HttpError } from './lib/shared.mjs';
 import { saveCardOnFile } from './lib/card-vault.mjs';
 import { deleteAuth, deviceApi, deviceConfig, deviceConfigured, expectedCents, readAuth, saveAuth, validAuth } from './lib/clover-device.mjs';
+import { readStore } from './lib/records.mjs';
 
 const sid = () => encodeURIComponent(storeId());
 // Cards saved from the Flex go to the same Clover account the batch charge uses — only when both are on the same environment.
@@ -61,7 +62,7 @@ export const handler = async (event) => {
       if (!ids.length) throw new HttpError(400, 'No tickets given');
       const a = await validAuth();
       if (!a.device_id) throw new HttpError(409, 'Choose which Clover device to use in Settings → Clover Flex');
-      const store = (await selectRows('pos_state', `store_id=eq.${sid()}&limit=1`, 'payload'))?.[0]?.payload || {};
+      const { payload: store } = await readStore({ orderIds: ids });
       const orders = ids.map(id => (store.orders || []).find(o => String(o?.id) === id));
       if (orders.some(o => !o)) throw new HttpError(409, 'A ticket is not saved to the store yet — wait a second and try again');
       if (orders.some(o => o.paid === true || o.paymentStatus === 'paid')) throw new HttpError(409, 'One of these tickets is already paid');
@@ -128,7 +129,7 @@ export const handler = async (event) => {
       if (!customerId) throw new HttpError(400, 'Customer is required');
       if (!/^[A-Za-z0-9_-]{6,120}$/.test(token)) throw new HttpError(400, 'The Flex did not return a valid card token');
       if (!/^\S+@\S+\.\S+$/.test(email)) throw new HttpError(400, 'Clover needs the customer\'s email to save a card on file');
-      const store = (await selectRows('pos_state', `store_id=eq.${sid()}&limit=1`, 'payload'))?.[0]?.payload || {};
+      const { payload: store } = await readStore({ customerIds: [customerId] });
       const cust = (store.customers || []).find(x => String(x?.id) === customerId);
       if (!cust) throw new HttpError(409, 'This customer is not saved to the store yet — try again in a moment');
       const card = await saveCardOnFile(event, session, { customerId, token, email, name: String(body.name || cust.name || '').trim(), phone: cust.phone, fallback: { last4: String(body.last4 || '').replace(/\D/g, '').slice(-4), brand: String(body.brand || '').slice(0, 20) } });

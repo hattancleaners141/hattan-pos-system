@@ -7,6 +7,9 @@ import { mutateStore, readStore, siteUrl } from './lib/app.mjs';
 import { allowedOrders, nyToday, routeFor, scanCodes } from './lib/delivery.mjs';
 import { compose, deliver, receiptUrl, smsMode } from './lib/sms.mjs';
 
+// V47: open tickets + anything changed in the last 2 days, with their customers.
+const ROUTE_SCOPE = { workingOrders: 2, orderCustomers: true };
+
 const clean = (s, n = 200) => String(s ?? '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n);
 const METHODS = ['Handed to customer', 'Left with doorman', 'Front desk / concierge', 'Mailroom / package room', 'Left at door'];
 
@@ -33,7 +36,7 @@ export const handler = async (event) => {
     const scanned = [...new Set((Array.isArray(body.scanned) ? body.scanned : []).map(s => clean(s, 40).toUpperCase()))].slice(0, 60);
 
     // Every delivered ticket must have been scanned (or the driver explains why not).
-    const { payload } = await readStore();
+    const { payload } = await readStore(ROUTE_SCOPE);
     const orders = allowedOrders(payload, session.sub, ids, kind === 'pickup' ? 'pickup' : 'delivery');
     const unscanned = kind === 'delivery' ? orders.filter(o => !scanCodes(o).some(c => scanned.includes(c))) : [];
     const override = clean(body.scanOverride, 120);
@@ -66,11 +69,11 @@ export const handler = async (event) => {
         }
       }
       return list.map(o => ({ id: o.id, customerId: o.customerId }));
-    });
+    }, { orderIds: ids, orderCustomers: true });
 
     // Let the customer know (texts only go out when texting is switched on and they opted in).
     if (kind === 'delivery' && smsMode() !== 'off') {
-      const store = (await readStore()).payload;
+      const store = (await readStore(ROUTE_SCOPE)).payload;
       const byCustomer = new Map();
       changed.forEach(o => { if (o.customerId) byCustomer.set(o.customerId, [...(byCustomer.get(o.customerId) || []), o.id]); });
       for (const [cid, oids] of byCustomer) {
@@ -82,7 +85,7 @@ export const handler = async (event) => {
         } catch (e) { console.error('delivered text', e.message); }
       }
     }
-    const fresh = (await readStore()).payload;
+    const fresh = (await readStore(ROUTE_SCOPE)).payload;
     return json(200, { ok: true, proofId: proof?.id, today: nyToday(), ...routeFor(fresh, session.sub) });
   } catch (error) { return handleError(error); }
 };

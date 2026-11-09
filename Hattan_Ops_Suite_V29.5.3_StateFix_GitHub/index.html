@@ -1183,6 +1183,9 @@ window.state = state;
 const STORAGE_KEY = 'hattan_ops_suite_v1';
 function stripPhotos(photos) { return (photos || []).map(p => ({ id: p.id, caption: p.caption, timestamp: p.timestamp, type: p.type })); }
 function saveState() {
+  // V47: on the live system the server is the copy of record and V16 deletes this browser copy
+  // right after writing it — skip the (large) write entirely.
+  if (typeof v16IsShared === 'function' && v16IsShared()) return;
   try {
     // Photo dataURLs are kept in-memory only (they'd blow past localStorage's quota in a
     // few shots) — everything else about an order, including photo *counts*, persists.
@@ -4742,5 +4745,6 @@ document.addEventListener('DOMContentLoaded', () => {
   <script src="v44-tailor.js?v=440"></script>
   <script src="v45-help.js?v=455"></script>
   <script src="v46-ticket-start.js?v=460"></script>
+  <script src="v47-records-sync.js?v=470"></script>
 </body>
 </html>
