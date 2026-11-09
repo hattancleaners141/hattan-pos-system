@@ -4,6 +4,7 @@
 import crypto from 'node:crypto';
 import { assertSameOrigin, handleError, json, methodNotAllowed, parseBody, requireSession, selectRows, storeId, HttpError } from './lib/shared.mjs';
 import { mutateStore, updateAccount, isPlaceholderEmail } from './lib/app.mjs';
+import { nextCustomerNumber } from './lib/records.mjs';
 import { compose, deliver, e164, smsMode } from './lib/sms.mjs';
 
 const sid = () => encodeURIComponent(storeId());
@@ -31,16 +32,15 @@ export const handler = async (event) => {
     }
     if (body.action !== 'link' && body.action !== 'createNew') throw new HttpError(400, 'Unknown action');
 
+    const customerNumber = body.action === 'createNew' ? await nextCustomerNumber() : '';
     const customer = await mutateStore(store => {
       let c;
       if (body.action === 'link') {
         c = (store.customers || []).find(x => String(x.id) === String(body.customerId || ''));
         if (!c) throw new HttpError(409, 'Open the customer in the POS first so they are saved, then try again');
       } else {
-        const n = Math.max(Number(store.nextCustomerNumber) || 10001, 10001);
-        store.nextCustomerNumber = n + 1;
         const name = signup.name || account.email.split('@')[0];
-        c = { id: 'cust_' + crypto.randomBytes(6).toString('base64url'), customerNumber: `C-${n}`, name, initials: initials(name), phone: signup.phone || '', email: '', memberSince: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), points: 0, storeCredit: 0, preferredChannel: 'pickup', addresses: [], paymentMethods: [], garmentPrefs: { starch: 'light', fold: 'hang', fragranceFree: false, notes: '' }, source: 'customer-app', createdAt: new Date().toISOString() };
+        c = { id: 'cust_' + crypto.randomBytes(6).toString('base64url'), customerNumber, name, initials: initials(name), phone: signup.phone || '', email: '', memberSince: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), points: 0, storeCredit: 0, preferredChannel: 'pickup', addresses: [], paymentMethods: [], garmentPrefs: { starch: 'light', fold: 'hang', fragranceFree: false, notes: '' }, source: 'customer-app', createdAt: new Date().toISOString() };
         (store.customers = store.customers || []).push(c);
       }
       if (!c.email || isPlaceholderEmail(c.email)) c.email = account.email;
@@ -48,7 +48,7 @@ export const handler = async (event) => {
       if (signup.address?.street && !(c.addresses || []).length) c.addresses = [signup.address];
       if (signup.smsOn && e164(signup.phone || c.phone)) c.smsConsent = { on: true, phone: e164(signup.phone || c.phone), at: signup.at || new Date().toISOString(), by: 'Customer app (written)', method: 'app' };
       return c;
-    });
+    }, { customerIds: body.action === 'link' ? [String(body.customerId || '')] : [] });
     await updateAccount(account.id, { status: 'linked', customer_id: customer.id, match_note: `Confirmed by ${session.name || 'staff'}` });
     if (customer.smsConsent?.on && smsMode() !== 'off') {
       try { await deliver({ keys: [`optin:${customer.id}:${customer.smsConsent.phone}`], kind: 'optin', customer, body: compose('optin', {}), sentBy: session.sub, event }); } catch (e) { console.error(e.message); }

@@ -8,7 +8,8 @@ const fmt = iso => { const d = new Date(iso); return `${d.toLocaleDateString('en
 
 export async function runReminders(now = Date.now()) {
   if (smsMode() === 'off' || !twilioConfigured()) return { skipped: 'texting off' };
-  const store = await loadStore();
+  // Only tickets still in the shop can need a pickup reminder.
+  const store = await loadStore({ workingOrders: 1, orderCustomers: true });
   if (!smsSettings(store).enabled.reminder) return { skipped: 'reminders switched off' };
   const due = [];
   for (const o of store.orders || []) {

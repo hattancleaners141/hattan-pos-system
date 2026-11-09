@@ -123,28 +123,9 @@ export async function sendLoginEmail(email, code) {
 }
 
 // ---------------------------------------------------------------- store read / write
-export async function readStore() {
-  const rows = await selectRows('pos_state', `store_id=eq.${sid()}&limit=1`, 'version,payload');
-  return { version: Number(rows?.[0]?.version || 0), payload: rows?.[0]?.payload || {} };
-}
-// Safely change the shared store data. Uses the same versioned save as the POS, so a POS
-// device that is mid-edit merges these changes instead of overwriting them.
-export async function mutateStore(fn) {
-  for (let i = 0; i < 6; i++) {
-    const { version, payload } = await readStore();
-    const draft = structuredClone(payload);
-    const out = await fn(draft);
-    if (out && out.__noWrite) return out.value;
-    const res = await supabaseRest('rpc/hattan_sync_state', {
-      method: 'POST',
-      body: JSON.stringify({ p_store_id: storeId(), p_base_version: version, p_payload: draft, p_staff_id: 'customer-app', p_client_id: 'customer-app' }),
-    });
-    if (!res?.conflict) return out;
-    await sleep(120 * (i + 1));
-  }
-  throw new HttpError(503, 'The shop system is busy. Please try again.');
-}
-export const noWrite = value => ({ __noWrite: true, value });
+// V47: tickets and customers are individual database rows. readStore/mutateStore take a scope
+// saying which rows a request needs (see lib/records.mjs); the rest of the shop is not loaded.
+export { readStore, mutateStore, noWrite } from './records.mjs';
 
 // ---------------------------------------------------------------- legacy (CleanBase) directory
 // Netlify bundles functions as CommonJS, where import.meta.url is empty — fall back safely.

@@ -3,6 +3,7 @@
 // to the customer's oldest unpaid tickets (same way a check payment is applied).
 // Body: { customerId, amount (dollars), note?, idempotencyKey }
 import { assertSameOrigin, cloverRequest, handleError, insertRows, json, methodNotAllowed, parseBody, randomId, requireSession, safePaymentResponse, selectRows, storeId, updateRows, HttpError } from './lib/shared.mjs';
+import { readStore } from './lib/records.mjs';
 
 const MAX_CENTS = 200000; // $2,000 per charge
 
@@ -23,7 +24,7 @@ export const handler = async (event) => {
     const prior = (await selectRows('payment_transactions', `store_id=eq.${sid}&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&limit=1`, '*'))?.[0];
     if (prior?.status === 'succeeded') return json(200, { ok: true, alreadyProcessed: true, payment: { id: prior.processor_id, status: 'succeeded', paid: true, amount: Number(prior.amount_cents || 0), brand: prior.brand, last4: prior.last4 } });
     if (prior?.status === 'processing') throw new HttpError(409, 'This charge may still be processing. Check Clover before trying again.');
-    const store = (await selectRows('pos_state', `store_id=eq.${sid}&limit=1`, 'payload'))?.[0]?.payload || {};
+    const { payload: store } = await readStore({ customerIds: [customerId] });
     const customer = (store.customers || []).find(c => String(c?.id) === customerId);
     if (!customer) throw new HttpError(409, 'This customer is not in the latest shared store data yet');
     const vault = (await selectRows('payment_vault', `store_id=eq.${sid}&customer_id=eq.${encodeURIComponent(customerId)}&active=eq.true&limit=1`, '*'))?.[0];

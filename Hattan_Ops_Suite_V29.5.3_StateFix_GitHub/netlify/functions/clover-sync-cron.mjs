@@ -1,6 +1,6 @@
 // Scheduled every 15 minutes: pick up voids / refunds that were done directly on Clover.
 // Every run checks card charges from the last 3 days; the ~3am run checks the last 60 days.
-import { cloverConfigured } from './lib/shared.mjs';
+import { cloverConfigured, supabaseRest } from './lib/shared.mjs';
 import { syncCloverReversals } from './lib/clover-sync.mjs';
 
 export default async () => {
@@ -8,6 +8,8 @@ export default async () => {
   const hour = Number(new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/New_York' }));
   const minute = new Date().getUTCMinutes();
   const days = hour === 3 && minute < 15 ? 60 : 3;
+  // Once a night: drop saved earlier versions of tickets/customers older than 90 days.
+  if (days === 60) { try { await supabaseRest('rpc/hattan_trim_record_history', { method: 'POST', body: JSON.stringify({ p_days: 90 }) }); } catch (e) { console.error('history trim', e.message); } }
   try {
     const r = await syncCloverReversals({ days });
     console.log('clover-sync', JSON.stringify({ days, checked: r.checked, changed: r.changed }));

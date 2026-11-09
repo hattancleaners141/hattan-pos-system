@@ -5,12 +5,15 @@ import { assertSameOrigin, handleError, json, methodNotAllowed, parseBody, requi
 import { mutateStore, readStore } from './lib/app.mjs';
 import { allowedOrders, routeFor } from './lib/delivery.mjs';
 
+// V47: open tickets + anything changed in the last 2 days, with their customers.
+const ROUTE_SCOPE = { workingOrders: 2, orderCustomers: true };
+
 export const handler = async (event) => {
   if (!['GET', 'POST'].includes(event.httpMethod)) return methodNotAllowed('GET, POST');
   try {
     const session = requireSession(event);
     if (event.httpMethod === 'GET') {
-      const { payload } = await readStore();
+      const { payload } = await readStore(ROUTE_SCOPE);
       return json(200, { ok: true, driver: { id: session.sub, name: session.name }, ...routeFor(payload, session.sub) });
     }
     assertSameOrigin(event);
@@ -26,7 +29,7 @@ export const handler = async (event) => {
           o.assignedDriverId = session.sub; o.assignedDriverName = session.name; o.assignedAt = now;
           if (kind === 'claimDelivery') (o.activity = o.activity || []).unshift({ id: 'evt_' + Date.now().toString(36), type: 'driver_claim', label: `Taken by ${session.name} in the driver app`, at: now, by: session.name });
         });
-      });
+      }, { orderIds: ids, orderCustomers: true });
     } else if (body.action === 'start') {
       await mutateStore(s => {
         const list = allowedOrders(s, session.sub, ids, 'delivery');
@@ -35,9 +38,9 @@ export const handler = async (event) => {
           if (o.status !== 'out_for_delivery') { o.status = 'out_for_delivery'; o.stageIndex = 4; o.outForDeliveryAt = now; }
           (o.activity = o.activity || []).unshift({ id: 'evt_' + Date.now().toString(36), type: 'out_for_delivery', label: `Out for delivery with ${session.name}`, at: now, by: session.name });
         });
-      });
+      }, { orderIds: ids, orderCustomers: true });
     } else throw new HttpError(400, 'Unknown action');
-    const { payload } = await readStore();
+    const { payload } = await readStore(ROUTE_SCOPE);
     return json(200, { ok: true, driver: { id: session.sub, name: session.name }, ...routeFor(payload, session.sub) });
   } catch (error) { return handleError(error); }
 };

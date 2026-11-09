@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { assertSameOrigin, handleError, json, methodNotAllowed, parseBody, HttpError } from './lib/shared.mjs';
 import { REWARDS, SERVICES, TAGS, TIME_WINDOWS, customerView, digits10, legacyDirectory, mutateStore, noWrite, readStore, requireAccount, updateAccount, isPlaceholderEmail, clearAppCookie } from './lib/app.mjs';
 import { compose, deliver, e164, smsMode } from './lib/sms.mjs';
+import { customerByPhone, nextCustomerNumber, reserveNumbers } from './lib/records.mjs';
 
 const id = p => p + crypto.randomBytes(6).toString('base64url');
 const clean = (s, n = 120) => String(s ?? '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n);
@@ -43,6 +44,8 @@ export const handler = async (event) => {
     const account = await requireAccount(event);
     const body = parseBody(event);
     const action = String(body.action || '');
+    const mine = { customerIds: [account.customer_id] };
+    const mineWithOrders = { ...mine, ordersOfCustomers: true };
 
     // ---------------- first-time setup for a new email ----------------
     if (action === 'signup') {
@@ -53,7 +56,7 @@ export const handler = async (event) => {
       const phone = phoneOrThrow(body.phone);
       const address = body.address?.street ? addressFrom(body.address) : null;
       const d10 = digits10(phone);
-      const { payload } = await readStore();
+      const { payload } = await readStore({ customerRows: () => customerByPhone(d10) });
       const inPos = (payload.customers || []).filter(c => c && digits10(c.phone) === d10);
       const inCleanBase = inPos.length ? [] : legacyDirectory().filter(r => r.phone === d10);
       if (inPos.length || inCleanBase.length) {
@@ -66,12 +69,11 @@ export const handler = async (event) => {
         });
         return json(200, { ok: true, status: 'pending' });
       }
+      const customerNumber = await nextCustomerNumber();
       const customer = await mutateStore(store => {
-        const n = Math.max(Number(store.nextCustomerNumber) || 10001, 10001);
-        store.nextCustomerNumber = n + 1;
         const at = new Date();
         const c = {
-          id: id('cust_'), customerNumber: `C-${n}`, name, initials: initials(name), phone, email: account.email,
+          id: id('cust_'), customerNumber, name, initials: initials(name), phone, email: account.email,
           memberSince: at.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), points: 0, storeCredit: 0,
           preferredChannel: 'pickup', addresses: address ? [address] : [], paymentMethods: [],
           garmentPrefs: { starch: 'light', fold: 'hang', fragranceFree: false, notes: '' },
@@ -92,7 +94,7 @@ export const handler = async (event) => {
           const c = findCustomer(store, account);
           if (!c) return noWrite(null);
           c.appAccountId = null; c.appDeletedAt = new Date().toISOString();
-        });
+        }, mine);
       }
       await updateAccount(account.id, { status: 'deleted', customer_id: null, signup: null, session_epoch: Number(account.session_epoch || 0) + 1 });
       return json(200, { ok: true }, { 'Set-Cookie': clearAppCookie() });
@@ -114,7 +116,7 @@ export const handler = async (event) => {
         }
         if (!c.email || isPlaceholderEmail(c.email)) c.email = account.email;
         return c;
-      });
+      }, mine);
       return json(200, { ok: true, customer: customerView(c) });
     }
 
@@ -131,7 +133,7 @@ export const handler = async (event) => {
           if (c.addresses.length > 6) throw new HttpError(400, 'You can save up to 6 addresses');
         }
         return c;
-      });
+      }, mine);
       return json(200, { ok: true, customer: customerView(c) });
     }
 
@@ -146,7 +148,7 @@ export const handler = async (event) => {
           fragranceFree: !!p.fragranceFree, notes: clean(p.notes, 300),
         };
         return c;
-      });
+      }, mine);
       return json(200, { ok: true, customer: customerView(c) });
     }
 
@@ -159,7 +161,7 @@ export const handler = async (event) => {
           ? { on: true, phone: e164(c.phone), at: new Date().toISOString(), by: 'Customer app (written)', method: 'app' }
           : { on: false, at: new Date().toISOString(), by: 'Customer app' };
         return c;
-      });
+      }, mine);
       if (on) await confirmTexts(c, event);
       return json(200, { ok: true, customer: customerView(c) });
     }
@@ -184,6 +186,7 @@ export const handler = async (event) => {
       if (rush) tags.push('rush');
       const recurring = ['none', 'weekly', 'biweekly', 'monthly'].includes(body.recurring) ? body.recurring : 'none';
       const notes = clean(body.notes, 500);
+      const ticket = `A${String(await reserveNumbers('app-pickup', 1, 1)).padStart(5, '0')}`;
       const order = await mutateStore(store => {
         const c = needCustomer(store, account);
         let address = (c.addresses || []).find(a => a.id === body.addressId);
@@ -191,12 +194,8 @@ export const handler = async (event) => {
         if (!address) throw new HttpError(400, 'Choose a pickup address');
         const open = (store.orders || []).filter(o => String(o.customerId) === String(c.id) && o.channel === 'delivery' && o.status === 'scheduled' && o.appRequested);
         if (open.length >= 3) throw new HttpError(400, 'You already have 3 pickups scheduled. Call us to add more.');
-        // App pickups get their own "A" numbers so they can never collide with a counter
-        // ticket being written on a POS device at the same moment.
-        const used = new Set((store.orders || []).map(o => String(o.ticket)));
-        let n = Math.floor(Date.now() / 1000) % 100000;
-        while (used.has(`A${String(n).padStart(5, '0')}`)) n = (n + 1) % 100000;
-        const ticket = `A${String(n).padStart(5, '0')}`;
+        // App pickups get their own "A" numbers (from the database) so they never collide with
+        // a counter ticket.
         const names = services.map(s => SERVICES.find(x => x.id === s).name);
         const label = day.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         const o = {
@@ -211,7 +210,7 @@ export const handler = async (event) => {
         };
         (store.orders = store.orders || []).unshift(o);
         return o;
-      });
+      }, mineWithOrders);
       return json(200, { ok: true, orderId: order.id, ticket: order.ticket });
     }
 
@@ -222,7 +221,7 @@ export const handler = async (event) => {
         if (!o) throw new HttpError(404, 'Pickup not found');
         if (!(o.channel === 'delivery' && o.status === 'scheduled' && o.appRequested)) throw new HttpError(409, 'This pickup can no longer be canceled in the app. Please call us.');
         o.status = 'voided'; o.voided = true; o.voidReason = 'Canceled by customer in the app'; o.voidedAt = new Date().toISOString();
-      });
+      }, mineWithOrders);
       return json(200, { ok: true });
     }
 
@@ -237,7 +236,7 @@ export const handler = async (event) => {
         c.storeCredit = Math.round((Number(c.storeCredit || 0) + reward.value) * 100) / 100;
         (c.rewardLog = c.rewardLog || []).unshift({ at: new Date().toISOString(), rewardId: reward.id, title: reward.title, cost: reward.cost, value: reward.value, via: 'customer app' });
         return c;
-      });
+      }, mine);
       return json(200, { ok: true, customer: customerView(c) });
     }
 

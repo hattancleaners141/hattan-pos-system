@@ -4,6 +4,7 @@
 // STOP language, and only goes to customers who opted in.
 import crypto from 'node:crypto';
 import { env, storeId, selectRows, supabaseRest, HttpError } from './shared.mjs';
+import { readStore } from './records.mjs';
 
 export const SHOP = {
   name: 'Hattan Cleaners',
@@ -35,9 +36,9 @@ export function e164(raw) {
 }
 
 // ---- store data -------------------------------------------------------------------------
-export async function loadStore() {
-  const rows = await selectRows('pos_state', `store_id=eq.${encodeURIComponent(storeId())}&limit=1`, 'payload');
-  return rows?.[0]?.payload || {};
+// V47: pass a scope (see lib/records.mjs) — only the customers/tickets a text needs are loaded.
+export async function loadStore(scope = {}) {
+  return (await readStore(scope)).payload;
 }
 export function smsSettings(store) {
   const s = (store.interfaceSettings && store.interfaceSettings.sms) || {};

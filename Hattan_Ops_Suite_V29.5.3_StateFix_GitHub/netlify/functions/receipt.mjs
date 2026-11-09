@@ -52,7 +52,7 @@ export const handler = async (event) => {
   if (!orderId) return page(404, `<div class="card"><h1>Receipt not found</h1><p class="sub">This link isn't valid. Call us at ${SHOP.phone}.</p></div>`);
   let store;
   if (sample) store = SAMPLE_STORE;
-  else { try { store = await loadStore(); } catch { return page(503, `<div class="card"><h1>Please try again</h1><p class="sub">We couldn't load your receipt right now.</p></div>`); } }
+  else { try { store = await loadStore({ orderIds: [orderId], orderCustomers: true }); } catch { return page(503, `<div class="card"><h1>Please try again</h1><p class="sub">We couldn't load your receipt right now.</p></div>`); } }
   const o = (store.orders || []).find(x => String(x?.id) === orderId);
   if (!o || o.status === 'voided') return page(404, `<div class="card"><h1>Receipt not available</h1><p class="sub">Call us at ${SHOP.phone}.</p></div>`);
   const garments = store.garmentCatalog || [];

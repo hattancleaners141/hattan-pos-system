@@ -5,6 +5,7 @@ import { env, supabaseRest, storeId } from './lib/shared.mjs';
 import { compose, deliver, e164, logInsert, setOptOut, siteUrl, twilioSignatureValid } from './lib/sms.mjs';
 import { mutateStore, readStore } from './lib/app.mjs';
 import { staffAlert } from './lib/alerts.mjs';
+import { customersByTextNumber } from './lib/records.mjs';
 
 const AGAIN_WORDS = ['AGAIN', 'REDO', 'RECLEAN', 'AGIAN', 'AGAINPLEASE', 'TRYAGAIN'];
 const PACK_WORDS = ['PACK', 'PACKIT', 'PACKITPLEASE', 'PACKPLEASE', 'PACKED'];
@@ -22,7 +23,7 @@ async function doOverAnswer(from, answer, event) {
     const orders = open.filter(o => o.doOver.at === latest);
     orders.forEach(o => { o.doOver.status = answer; o.doOver.answeredAt = now; });
     hit = { customer: cust.find(c => String(c.id) === String(orders[0].customerId)), orders: orders.map(o => ({ ...o })) };
-  });
+  }, { customerRows: () => customersByTextNumber(from), ordersOfCustomers: true });
   if (hit?.customer) {
     try { await deliver({ keys: [`doOverReply:${hit.orders.map(o => o.id).join('+')}:${answer}`], kind: 'doOverReply', customer: hit.customer, orderIds: hit.orders.map(o => o.id), body: compose('doOverReply', { customer: hit.customer, orders: hit.orders, answer }), sentBy: 'customer-reply', event }); } catch (e) { console.error('doOver reply', e); }
   }
@@ -65,7 +66,7 @@ export const handler = async (event) => {
     await logInsert({ direction: 'in', kind, to_phone: from, body: text.slice(0, 1000), status: 'received', twilio_sid: params.MessageSid || null });
     // Tell the shop (POS bell + email). Find who it is by phone number.
     try {
-      const { payload } = await readStore();
+      const { payload } = await readStore(from ? { customerRows: () => customersByTextNumber(from) } : {});
       const c = (payload.customers || []).find(x => e164(x.smsConsent?.phone || x.phone) === from);
       const title = { reply: 'Customer texted back', 'doover-again': 'Do Over: customer said AGAIN (re-clean)', 'doover-pack': 'Do Over: customer said PACK it', optout: 'Customer replied STOP (texts off)', 'optin-keyword': 'Customer turned texts back on', help: 'Customer texted HELP' }[kind] || 'Customer text';
       await staffAlert({ type: kind.startsWith('doover') ? 'doover' : kind === 'reply' ? 'reply' : 'texts', title, text: `"${text.slice(0, 300)}" — from ${from ? '•••' + from.slice(-4) : 'unknown number'}`, customerId: c?.id || '', customerName: c?.name || '' });

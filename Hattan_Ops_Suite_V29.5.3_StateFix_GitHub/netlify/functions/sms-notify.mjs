@@ -47,7 +47,9 @@ export const handler = async (event) => {
     const session = requireSession(event, kind === 'notice');
     if (smsMode() === 'off') return json(200, { ok: true, skipped: 'Texting is off (SMS_MODE)' });
 
-    const store = await loadStore();
+    const wantedCustomers = [...(Array.isArray(body.customerIds) ? body.customerIds.slice(0, 25) : []), body.customerId].filter(Boolean).map(String);
+    const wantedOrders = [...(Array.isArray(body.orderIds) ? body.orderIds.slice(0, 20) : []), ...(Array.isArray(body.selections) ? body.selections.slice(0, 10).map(x => x?.orderId) : [])].filter(Boolean).map(String);
+    const store = await loadStore({ customerIds: wantedCustomers, orderIds: wantedOrders });
     const settings = smsSettings(store);
     if (kind in settings.enabled && !settings.enabled[kind]) return json(200, { ok: true, skipped: 'This automatic text is switched off' });
     const customers = store.customers || [];
@@ -110,7 +112,7 @@ export const handler = async (event) => {
             const o = (s.orders || []).find(y => String(y.id) === String(x.o.id));
             if (o) o.doOver = { at, by: session.name || session.sub, lines: x.lines, items, status: r.sent ? 'asked' : 'not-texted' };
           }
-        });
+        }, { orderIds: picked.map(x => String(x.o.id)) });
       } catch (e) { console.error('doOver record', e); }
       return json(200, { ...r, message: msg });
     }

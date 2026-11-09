@@ -104,7 +104,7 @@ async function applyChange(chargeRows, state, event) {
     }
     if (!changed.length) return { __noWrite: true, value: null };
     return null;
-  });
+  }, { orderIds: parts.map(p => String(p.row.order_id)).filter(Boolean), orderCustomers: true });
   if (!changed.length && !(delta > 0)) return null;
   const cents = state.voided ? totalCents : delta;
   const tickets = (changed.length ? changed : parts.map(p => ({ id: p.row.order_id, ticket: String(p.row.order_id).replace(/^HC-/, '') })));

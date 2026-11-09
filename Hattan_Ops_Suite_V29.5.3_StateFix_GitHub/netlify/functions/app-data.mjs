@@ -8,7 +8,7 @@ export const handler = async (event) => {
   if (event.httpMethod !== 'GET') return methodNotAllowed('GET');
   try {
     const account = await requireAccount(event);
-    const { payload: store } = await readStore();
+    const { payload: store } = await readStore(account.customer_id ? { customerIds: [account.customer_id], ordersOfCustomers: true } : {});
     const environment = env('CLOVER_ENVIRONMENT', 'sandbox').toLowerCase() === 'production' ? 'production' : 'sandbox';
     const config = {
       shop: SHOP, services: SERVICES, tags: TAGS, timeWindows: TIME_WINDOWS, rewards: REWARDS,
